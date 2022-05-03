@@ -62,7 +62,7 @@ def test_main():
     with brownie.reverts():
         meta_arenas.transferFrom(owner.address, accounts[1].address, 1, {"from": owner})
     # Forward in time one level
-    chain.mine(blocks=100, timedelta=173000)
+    chain.mine(blocks=100, timedelta=259200)
     # Assert accumulation of rewards and level
     arena_stake_info = meta_arenas.availableRewards(1, {"from": owner})
     print(arena_stake_info)
@@ -70,11 +70,11 @@ def test_main():
     byte_rewards = arena_stake_info[1]
     arena_details = meta_arenas.arenaDetails(1, {"from": owner})
     print(arena_details)
-    assert esport_rewards >= ((173000 * 100000) / 3600)
+    assert esport_rewards >= ((259200 * 100000) / 3600)
     assert byte_rewards == 0
     assert arena_details[1] == 1
     # Forward in time to get to level required for Tier 1 upgrade
-    chain.mine(blocks=100, timedelta=172800 * 4)
+    chain.mine(blocks=100, timedelta=259200 * 10)
     # Assert accumulation of rewards and level
     arena_stake_info = meta_arenas.availableRewards(1, {"from": owner})
     print(arena_stake_info)
@@ -82,9 +82,9 @@ def test_main():
     byte_rewards = arena_stake_info[1]
     arena_details = meta_arenas.arenaDetails(1, {"from": owner})
     print(arena_details)
-    assert esport_rewards >= (((172800 * 4) * 100000) / 3600)
+    assert esport_rewards >= (((259200 * 10) * 100000) / 3600)
     assert byte_rewards == 0
-    assert arena_details[1] == 5
+    assert arena_details[1] == 11
     # Set up arena tier upgrade
     approve_esport = esport.approve(
         meta_arenas.address, 100 * 10 ** 18, {"from": owner}
@@ -128,7 +128,7 @@ def test_main():
     )
     # Assert level reset on transfer
     arena_details = meta_arenas.arenaDetails(1, {"from": owner})
-    assert arena_details[1] == 5
+    assert arena_details[1] == 11
     print(arena_details)
     transfer_arena = meta_arenas.transferFrom(
         owner.address, accounts[1].address, 1, {"from": owner}

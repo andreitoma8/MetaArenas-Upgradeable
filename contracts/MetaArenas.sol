@@ -133,8 +133,8 @@ contract MetaArenas is
         maxAmountPerTx = 3;
         maxSupply = 1000;
         uriSuffix = ".json";
-        levelsForUpgrade = 5;
-        timeToLevelUp = 172800;
+        levelsForUpgrade = 10;
+        timeToLevelUp = 259200; //172800;
         rewardsPerHourEsport = 100000;
         rewardsPerHourByte = 50000;
         tierMultiplier = 2;
