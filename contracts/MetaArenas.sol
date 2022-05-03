@@ -29,7 +29,7 @@ contract MetaArenas is
     IERC20 public byteToken;
 
     // Minting state
-    bool paused = true;
+    bool paused;
 
     // Rewards in Byte state
     bool public byteEndabled;
@@ -136,6 +136,7 @@ contract MetaArenas is
         rewardsPerHourByte = 50000;
         tierMultiplier = 2;
         supply = 1000;
+        paused = true;
         // Mint Arenas 118, 188 and 216 to owner.(A mistake was made in the previous SC
         // and we'll redistribute these Arenas back to the owners)
         _safeMint(msg.sender, 118);
@@ -143,15 +144,9 @@ contract MetaArenas is
         _safeMint(msg.sender, 216);
     }
 
-    function setInterfaces(
-        IArenas _oldArenas,
-        IERC1155 _passes,
-        IERC20 _esportToken
-    ) external onlyOwner {
-        oldArenas = _oldArenas;
-        passes = _passes;
-        esportToken = _esportToken;
-    }
+    /////////////
+    // Minting //
+    /////////////
 
     // Assures the mint per transaction amount and
     // the max supply are respected
@@ -207,14 +202,6 @@ contract MetaArenas is
         _mintLoop(msg.sender, _amount);
     }
 
-    // Loop for minting multiple NFTs in one transaction
-    function _mintLoop(address _receiver, uint256 _mintAmount) internal {
-        for (uint256 i = 0; i < _mintAmount; i++) {
-            supply++;
-            _safeMint(_receiver, supply);
-        }
-    }
-
     // Free mint function for Owner of the Smart Contract, used for Giveaways
     function mintForAddress(uint256 _mintAmount, address _receiver)
         public
@@ -224,161 +211,9 @@ contract MetaArenas is
         _mintLoop(_receiver, _mintAmount);
     }
 
-    // Returns the current supply of the collection
-    function totalSupply() public view returns (uint256) {
-        return supply;
-    }
-
-    // Returns the Token Id for Tokens owned by the specified address
-    // Will only be callable after all old arenas are migrated
-    function tokensOfOwner(address _owner)
-        public
-        view
-        returns (uint256[] memory)
-    {
-        uint256 ownerTokenCount = balanceOf(_owner);
-        uint256[] memory ownedTokenIds = new uint256[](ownerTokenCount);
-        uint256 currentTokenId = 1;
-        uint256 ownedTokenIndex = 0;
-
-        while (ownedTokenIndex < ownerTokenCount && currentTokenId <= supply) {
-            address currentTokenOwner = ownerOf(currentTokenId);
-
-            if (currentTokenOwner == _owner) {
-                ownedTokenIds[ownedTokenIndex] = currentTokenId;
-
-                ownedTokenIndex++;
-            }
-            currentTokenId++;
-        }
-        return ownedTokenIds;
-    }
-
-    // Returns the Token URI with Metadata for specified Token Id
-    function tokenURI(uint256 _tokenId)
-        public
-        view
-        virtual
-        override
-        returns (string memory)
-    {
-        require(
-            _exists(_tokenId),
-            "ERC721Metadata: URI query for nonexistent token"
-        );
-        string memory currentBaseURI = _baseURI();
-        return
-            bytes(currentBaseURI).length > 0
-                ? string(
-                    abi.encodePacked(
-                        currentBaseURI,
-                        _tokenId.toString(),
-                        uriSuffix
-                    )
-                )
-                : "";
-    }
-
-    // Set paused state for minting
-    function setPaused(bool _paused) external onlyOwner {
-        paused = _paused;
-    }
-
-    // Set the Byte Token Smart Contract
-    function setByteToken(IERC20 _address) external onlyOwner {
-        byteToken = _address;
-    }
-
-    // Set if byte enabled in the system
-    function setByteEnabled(bool _bool) external onlyOwner {
-        byteEndabled = _bool;
-    }
-
-    // Set the prices for Arena Upgrade
-    function setPriceForUpgrade(
-        uint256 _priceForUpgradeEsport,
-        uint256 _priceForUpgradeByte
-    ) external onlyOwner {
-        esportPriceForUpgrade = _priceForUpgradeEsport;
-        bytePriceForUpgrade = _priceForUpgradeByte;
-    }
-
-    // Set rewards (everyone needs to claim rewards or unstake their arena
-    // before the rewards per hour is set or they might lose some of their
-    // accumulated rewards)
-    function setRewardsPerHour(
-        uint256 _rewardsPerHourEsport,
-        uint256 _rewardsPerHourByte
-    ) external onlyOwner {
-        rewardsPerHourEsport = _rewardsPerHourEsport;
-        rewardsPerHourByte = _rewardsPerHourByte;
-    }
-
-    // Set the mint cost of one NFT
-    function setPrice(
-        uint256 _carbon,
-        uint256 _gold,
-        uint256 _all
-    ) public onlyOwner {
-        priceForCarbon = _carbon;
-        priceForGold = _gold;
-        priceForAll = _all;
-    }
-
-    // Set the maximum mint amount per transaction
-    function setMaxMintAmountPerTx(uint256 _maxMintAmountPerTx)
-        public
-        onlyOwner
-    {
-        maxAmountPerTx = _maxMintAmountPerTx;
-    }
-
-    // Set the URI of your IPFS/hosting server for the metadata folder.
-    // Used in the format: "ipfs://your_uri/".
-    function setUri(string memory _uri) public onlyOwner {
-        uri = _uri;
-    }
-
-    // Set the minting period for next districts
-    function setMintingPeriods(
-        uint256 _mintStart,
-        uint256 _mintCarbonEnd,
-        uint256 _mintGoldEnd,
-        uint256 _mintEnd
-    ) external onlyOwner {
-        mintStart = _mintStart;
-        mintCarbonEnd = _mintCarbonEnd;
-        mintGoldEnd = _mintGoldEnd;
-        mintEnd = _mintEnd;
-    }
-
-    function addDistrict() external onlyOwner {
-        require(maxSupply <= 4000);
-        maxSupply += 1000;
-    }
-
-    // Withdraw ETH after sale
-    function withdraw(uint256 _amountEsport, uint256 _amountByte)
-        public
-        onlyOwner
-    {
-        uint256 _balanceEsport = esportToken.balanceOf(address(this));
-        require(_amountEsport <= _balanceEsport);
-        esportToken.transfer(msg.sender, _amountEsport);
-        if (byteEndabled) {
-            uint256 _balanceByte = byteToken.balanceOf(address(this));
-            require(_amountByte <= _balanceByte);
-            byteToken.transfer(msg.sender, _amountByte);
-        }
-    }
-
-    // Helper function
-    function _baseURI() internal view virtual override returns (string memory) {
-        return uri;
-    }
-
-    // Just because you never know
-    receive() external payable {}
+    /////////////
+    // Staking //
+    /////////////
 
     // Function to stake arena
     function stakeArena(uint256 _arenaTokenId) external nonReentrant {
@@ -478,6 +313,114 @@ contract MetaArenas is
         arenas[_arenaTokenId] = _arena;
     }
 
+    ///////////
+    // Admin //
+    ///////////
+
+    // Set the address for other SC in the ecosystem
+    function setInterfaces(
+        IArenas _oldArenas,
+        IERC1155 _passes,
+        IERC20 _esportToken
+    ) external onlyOwner {
+        oldArenas = _oldArenas;
+        passes = _passes;
+        esportToken = _esportToken;
+    }
+
+    // Set paused state for minting
+    function setPaused(bool _paused) external onlyOwner {
+        paused = _paused;
+    }
+
+    // Set the Byte Token Smart Contract
+    function setByteToken(IERC20 _address) external onlyOwner {
+        byteToken = _address;
+    }
+
+    // Set if byte enabled in the system
+    function setByteEnabled(bool _bool) external onlyOwner {
+        byteEndabled = _bool;
+    }
+
+    // Set the prices for Arena Upgrade
+    function setPriceForUpgrade(
+        uint256 _priceForUpgradeEsport,
+        uint256 _priceForUpgradeByte
+    ) external onlyOwner {
+        esportPriceForUpgrade = _priceForUpgradeEsport;
+        bytePriceForUpgrade = _priceForUpgradeByte;
+    }
+
+    // Set rewards (everyone needs to claim rewards or unstake their arena
+    // before the rewards per hour is set or they might lose some of their
+    // accumulated rewards)
+    function setRewardsPerHour(
+        uint256 _rewardsPerHourEsport,
+        uint256 _rewardsPerHourByte
+    ) external onlyOwner {
+        rewardsPerHourEsport = _rewardsPerHourEsport;
+        rewardsPerHourByte = _rewardsPerHourByte;
+    }
+
+    // Set the mint cost of one NFT
+    function setPrice(
+        uint256 _carbon,
+        uint256 _gold,
+        uint256 _all
+    ) public onlyOwner {
+        priceForCarbon = _carbon;
+        priceForGold = _gold;
+        priceForAll = _all;
+    }
+
+    // Set the maximum mint amount per transaction
+    function setMaxMintAmountPerTx(uint256 _maxMintAmountPerTx)
+        public
+        onlyOwner
+    {
+        maxAmountPerTx = _maxMintAmountPerTx;
+    }
+
+    // Set the URI of your IPFS/hosting server for the metadata folder.
+    // Used in the format: "ipfs://your_uri/".
+    function setUri(string memory _uri) public onlyOwner {
+        uri = _uri;
+    }
+
+    // Set the minting period for next districts
+    function setMintingPeriods(
+        uint256 _mintStart,
+        uint256 _mintCarbonEnd,
+        uint256 _mintGoldEnd,
+        uint256 _mintEnd
+    ) external onlyOwner {
+        mintStart = _mintStart;
+        mintCarbonEnd = _mintCarbonEnd;
+        mintGoldEnd = _mintGoldEnd;
+        mintEnd = _mintEnd;
+    }
+
+    function addDistrict() external onlyOwner {
+        require(maxSupply <= 4000);
+        maxSupply += 1000;
+    }
+
+    // Withdraw ETH after sale
+    function withdraw(uint256 _amountEsport, uint256 _amountByte)
+        public
+        onlyOwner
+    {
+        uint256 _balanceEsport = esportToken.balanceOf(address(this));
+        require(_amountEsport <= _balanceEsport);
+        esportToken.transfer(msg.sender, _amountEsport);
+        if (byteEndabled) {
+            uint256 _balanceByte = byteToken.balanceOf(address(this));
+            require(_amountByte <= _balanceByte);
+            byteToken.transfer(msg.sender, _amountByte);
+        }
+    }
+
     //////////
     // View //
     //////////
@@ -543,9 +486,77 @@ contract MetaArenas is
         );
     }
 
+    // Returns the Token Id for Tokens owned by the specified address
+    // Will only be callable after all old arenas are migrated
+    function tokensOfOwner(address _owner)
+        public
+        view
+        returns (uint256[] memory)
+    {
+        uint256 ownerTokenCount = balanceOf(_owner);
+        uint256[] memory ownedTokenIds = new uint256[](ownerTokenCount);
+        uint256 currentTokenId = 1;
+        uint256 ownedTokenIndex = 0;
+
+        while (ownedTokenIndex < ownerTokenCount && currentTokenId <= supply) {
+            address currentTokenOwner = ownerOf(currentTokenId);
+
+            if (currentTokenOwner == _owner) {
+                ownedTokenIds[ownedTokenIndex] = currentTokenId;
+
+                ownedTokenIndex++;
+            }
+            currentTokenId++;
+        }
+        return ownedTokenIds;
+    }
+
+    // Returns the Token URI with Metadata for specified Token Id
+    function tokenURI(uint256 _tokenId)
+        public
+        view
+        virtual
+        override
+        returns (string memory)
+    {
+        require(
+            _exists(_tokenId),
+            "ERC721Metadata: URI query for nonexistent token"
+        );
+        string memory currentBaseURI = _baseURI();
+        return
+            bytes(currentBaseURI).length > 0
+                ? string(
+                    abi.encodePacked(
+                        currentBaseURI,
+                        _tokenId.toString(),
+                        uriSuffix
+                    )
+                )
+                : "";
+    }
+
+    // Returns the current supply of the collection
+    function totalSupply() public view returns (uint256) {
+        return supply;
+    }
+
     /////////////
     // Internal//
     /////////////
+
+    // Helper function
+    function _baseURI() internal view virtual override returns (string memory) {
+        return uri;
+    }
+
+    // Loop for minting multiple NFTs in one transaction
+    function _mintLoop(address _receiver, uint256 _mintAmount) internal {
+        for (uint256 i = 0; i < _mintAmount; i++) {
+            supply++;
+            _safeMint(_receiver, supply);
+        }
+    }
 
     // Calculate rewards for param _staker by calculating the time passed
     // since last update in hours and mulitplying it to ERC721 Tokens Staked
@@ -555,10 +566,14 @@ contract MetaArenas is
         view
         returns (uint256 _rewards)
     {
-        return ((((block.timestamp -
-            arenas[_arenaTokenId].timeOfLastRewardUpdate) *
-            rewardsPerHourEsport) *
-            (arenas[_arenaTokenId].tier + tierMultiplier)) / 3600);
+        if (arenas[_arenaTokenId].staked) {
+            return ((((block.timestamp -
+                arenas[_arenaTokenId].timeOfLastRewardUpdate) *
+                rewardsPerHourEsport) *
+                (arenas[_arenaTokenId].tier + tierMultiplier)) / 3600);
+        } else {
+            return 0;
+        }
     }
 
     function calculateRewardsByte(uint256 _arenaTokenId)
@@ -566,10 +581,14 @@ contract MetaArenas is
         view
         returns (uint256 _rewards)
     {
-        return ((((block.timestamp -
-            arenas[_arenaTokenId].timeOfLastRewardUpdate) *
-            rewardsPerHourByte) *
-            (arenas[_arenaTokenId].tier + tierMultiplier)) / 3600);
+        if (arenas[_arenaTokenId].staked) {
+            return ((((block.timestamp -
+                arenas[_arenaTokenId].timeOfLastRewardUpdate) *
+                rewardsPerHourByte) *
+                (arenas[_arenaTokenId].tier + tierMultiplier)) / 3600);
+        } else {
+            return 0;
+        }
     }
 
     // Returns arena level for arg Arena Token ID
@@ -597,4 +616,7 @@ contract MetaArenas is
         arenas[tokenId].level = 0;
         super._beforeTokenTransfer(from, to, tokenId);
     }
+
+    // Just because you never know
+    receive() external payable {}
 }

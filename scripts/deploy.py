@@ -29,6 +29,7 @@ def main():
     )
     # Encode the initializa function
     encoded_initializer_function = encode_function_data(implementation.initialize)
+    print(encoded_initializer_function)
     proxy = TransparentUpgradeableProxy.deploy(
         implementation.address,
         proxy_admin.address,
