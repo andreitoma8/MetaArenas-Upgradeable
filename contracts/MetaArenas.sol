@@ -28,8 +28,11 @@ contract MetaArenas is
     // Interface for BYTE token
     IERC20 public byteToken;
 
+    // Address with role of boost for Level
+    address public levelBooster;
+
     // Minting state
-    bool paused;
+    bool public paused;
 
     // Rewards in Byte state
     bool public byteEndabled;
@@ -282,6 +285,21 @@ contract MetaArenas is
         esportToken.transfer(msg.sender, esportRewards);
     }
 
+    ////////////////////
+    // Level and Tier //
+    ////////////////////
+
+    // Function called by level booster to increse arena level
+    function increaseLevel(uint256 _arenaTokenId, uint256 _levelsToIncrease)
+        external
+    {
+        require(
+            msg.sender == levelBooster,
+            "You are not authorised to call this function!"
+        );
+        arenas[_arenaTokenId].level += _levelsToIncrease;
+    }
+
     // Upgrade the tier of your arena when you have the necesary level
     function upgradeArenaTier(uint256 _arenaTokenId) external nonReentrant {
         require(
@@ -386,6 +404,10 @@ contract MetaArenas is
     // Used in the format: "ipfs://your_uri/".
     function setUri(string memory _uri) public onlyOwner {
         uri = _uri;
+    }
+
+    function setLevelBooster(address _levelBooster) external onlyOwner {
+        levelBooster = _levelBooster;
     }
 
     // Set the minting period for next districts
