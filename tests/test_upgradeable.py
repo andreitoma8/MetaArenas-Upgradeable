@@ -1,4 +1,3 @@
-from sys import implementation
 from brownie import (
     Contract,
     MetaArenas,
