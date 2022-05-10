@@ -3,6 +3,7 @@
 pragma solidity ^0.8.4;
 
 import "@openzeppelin/contracts-upgradeable/contracts/token/ERC721/ERC721Upgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/contracts/token/ERC721/extensions/ERC721EnumerableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/contracts/access/OwnableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/contracts/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts-upgradeable/contracts/security/ReentrancyGuardUpgradeable.sol";
@@ -14,6 +15,7 @@ contract MetaArenas is
     Initializable,
     ERC721Upgradeable,
     OwnableUpgradeable,
+    ERC721EnumerableUpgradeable,
     ReentrancyGuardUpgradeable
 {
     using StringsUpgradeable for uint256;
@@ -509,7 +511,6 @@ contract MetaArenas is
     }
 
     // Returns the Token Id for Tokens owned by the specified address
-    // Will only be callable after all old arenas are migrated
     function tokensOfOwner(address _owner)
         public
         view
@@ -517,18 +518,8 @@ contract MetaArenas is
     {
         uint256 ownerTokenCount = balanceOf(_owner);
         uint256[] memory ownedTokenIds = new uint256[](ownerTokenCount);
-        uint256 currentTokenId = 1;
-        uint256 ownedTokenIndex = 0;
-
-        while (ownedTokenIndex < ownerTokenCount && currentTokenId <= supply) {
-            address currentTokenOwner = ownerOf(currentTokenId);
-
-            if (currentTokenOwner == _owner) {
-                ownedTokenIds[ownedTokenIndex] = currentTokenId;
-
-                ownedTokenIndex++;
-            }
-            currentTokenId++;
+        for (uint256 i; i < ownerTokenCount; ++i) {
+            ownedTokenIds[i] = tokenOfOwnerByIndex(_owner, i);
         }
         return ownedTokenIds;
     }
@@ -556,11 +547,6 @@ contract MetaArenas is
                     )
                 )
                 : "";
-    }
-
-    // Returns the current supply of the collection
-    function totalSupply() public view returns (uint256) {
-        return supply;
     }
 
     /////////////
@@ -628,17 +614,27 @@ contract MetaArenas is
         }
     }
 
-    // Override to block transfers of staked arenas
+    // Just because you never know
+    receive() external payable {}
+
+    // The following functions are overrides required by Solidity.
+
     function _beforeTokenTransfer(
         address from,
         address to,
         uint256 tokenId
-    ) internal override {
+    ) internal override(ERC721Upgradeable, ERC721EnumerableUpgradeable) {
         require(!arenas[tokenId].staked, "You can't transfer staked arenas!");
         arenas[tokenId].level = 0;
         super._beforeTokenTransfer(from, to, tokenId);
     }
 
-    // Just because you never know
-    receive() external payable {}
+    function supportsInterface(bytes4 interfaceId)
+        public
+        view
+        override(ERC721Upgradeable, ERC721EnumerableUpgradeable)
+        returns (bool)
+    {
+        return super.supportsInterface(interfaceId);
+    }
 }

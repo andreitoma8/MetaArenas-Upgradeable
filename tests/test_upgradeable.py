@@ -52,6 +52,9 @@ def test_main():
         == meta_arenas.ownerOf(216)
         == owner.address
     )
+    # Test tokensOfOwner
+    tokens_of_owner = meta_arenas.tokensOfOwner(owner.address, {"from": owner})
+    print(tokens_of_owner)
     # Stake Arena
     stake_tx = meta_arenas.stakeArena(1, {"from": owner})
     user_arenas_staked = meta_arenas.userStakedArenas(owner.address, {"from": owner})
@@ -189,7 +192,7 @@ def test_main():
     meta_arenas.mint(1, {"from": accounts[2]})
     # Assert minting logic
     total_supply = meta_arenas.totalSupply({"from": owner})
-    assert total_supply == 1005
+    assert total_supply == 10
     owner_of_1001 = meta_arenas.ownerOf(1001, {"from": owner})
     owner_of_1002 = meta_arenas.ownerOf(1002, {"from": owner})
     owner_of_1004 = meta_arenas.ownerOf(1004, {"from": owner})
