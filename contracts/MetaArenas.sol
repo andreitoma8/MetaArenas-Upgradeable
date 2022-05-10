@@ -108,6 +108,8 @@ contract MetaArenas is
         uint256 tier;
         // XP Level of the arena
         uint256 level;
+        // Rarity of the Arena(0: Common, 1: Uncommon, 2: Rare, 3: Epic, 4: Legendary)
+        uint256 rarity;
         // The time arena was staked at
         uint256 timeOfStake;
         // Last time of details update for this Arena
@@ -402,7 +404,7 @@ contract MetaArenas is
         maxAmountPerTx = _maxMintAmountPerTx;
     }
 
-    // Set the URI of your IPFS/hosting server for the metadata folder.
+    // The URI of IPFS/hosting server for the metadata folder.
     // Used in the format: "ipfs://your_uri/".
     function setUri(string memory _uri) public onlyOwner {
         uri = _uri;
@@ -428,6 +430,18 @@ contract MetaArenas is
     function addDistrict() external onlyOwner {
         require(maxSupply <= 4000);
         maxSupply += 1000;
+    }
+
+    // Add onchain metadata for Arena Rarity
+    function addRarity(uint256[] memory _tokenIds, uint256[] memory _rarity)
+        external
+        onlyOwner
+    {
+        require(_tokenIds.length == _rarity.length);
+        for (uint256 i; i < _tokenIds.length; ++i) {
+            require(_rarity[i] < 5);
+            arenas[_tokenIds[i]].rarity = _rarity[i];
+        }
     }
 
     // Withdraw ETH after sale
