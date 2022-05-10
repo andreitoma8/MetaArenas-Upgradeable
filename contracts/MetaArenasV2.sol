@@ -3,6 +3,7 @@
 pragma solidity ^0.8.4;
 
 import "@openzeppelin/contracts-upgradeable/contracts/token/ERC721/ERC721Upgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/contracts/token/ERC721/extensions/ERC721EnumerableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/contracts/access/OwnableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/contracts/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts-upgradeable/contracts/security/ReentrancyGuardUpgradeable.sol";
@@ -14,6 +15,7 @@ contract MetaArenasV2 is
     Initializable,
     ERC721Upgradeable,
     OwnableUpgradeable,
+    ERC721EnumerableUpgradeable,
     ReentrancyGuardUpgradeable
 {
     using StringsUpgradeable for uint256;
@@ -30,6 +32,9 @@ contract MetaArenasV2 is
 
     // Address with role of boost for Level
     address public levelBooster;
+
+    // Admin
+    address private admin;
 
     // Minting state
     bool public paused;
@@ -106,6 +111,8 @@ contract MetaArenasV2 is
         uint256 tier;
         // XP Level of the arena
         uint256 level;
+        // Rarity of the Arena(0: Common, 1: Uncommon, 2: Rare, 3: Epic, 4: Legendary)
+        uint256 rarity;
         // The time arena was staked at
         uint256 timeOfStake;
         // Last time of details update for this Arena
@@ -121,31 +128,36 @@ contract MetaArenasV2 is
 
     constructor() initializer {}
 
-    // function initialize() public initializer {
-    //     __ERC721_init("MetaArenas", "MARE");
-    //     __Ownable_init();
-    //     __ReentrancyGuard_init();
-    //     priceForCarbon = 10 * 10**18;
-    //     priceForGold = 15 * 10**18;
-    //     priceForAll = 20 * 10**18;
-    //     esportPriceForUpgrade = 100 * 10**18;
-    //     bytePriceForUpgrade = 200 * 10**18;
-    //     maxAmountPerTx = 3;
-    //     maxSupply = 1000;
-    //     uriSuffix = ".json";
-    //     levelsForUpgrade = 10;
-    //     timeToLevelUp = 259200; //172800;
-    //     rewardsPerHourEsport = 100000;
-    //     rewardsPerHourByte = 50000;
-    //     tierMultiplier = 2;
-    //     supply = 1000;
-    //     paused = true;
-    //     // Mint Arenas 118, 188 and 216 to owner.(A mistake was made in the previous SC
-    //     // and we'll redistribute these Arenas back to the owners)
-    //     _safeMint(msg.sender, 118);
-    //     _safeMint(msg.sender, 188);
-    //     _safeMint(msg.sender, 216);
-    // }
+    function initialize() public initializer {
+        __ERC721_init("MetaArenas", "MARE");
+        __Ownable_init();
+        __ReentrancyGuard_init();
+        priceForCarbon = 10 * 10**18;
+        priceForGold = 15 * 10**18;
+        priceForAll = 20 * 10**18;
+        esportPriceForUpgrade = 100 * 10**18;
+        bytePriceForUpgrade = 200 * 10**18;
+        maxAmountPerTx = 3;
+        maxSupply = 1000;
+        uriSuffix = ".json";
+        levelsForUpgrade = 10;
+        timeToLevelUp = 259200; //172800;
+        rewardsPerHourEsport = 100000;
+        rewardsPerHourByte = 50000;
+        tierMultiplier = 2;
+        supply = 1000;
+        paused = true;
+        // Mint Arenas 118, 188 and 216 to owner.(A mistake was made in the previous SC
+        // and we'll redistribute these Arenas back to the owners)
+        _safeMint(msg.sender, 118);
+        _safeMint(msg.sender, 188);
+        _safeMint(msg.sender, 216);
+    }
+
+    modifier onlyOwnerOrAdmin() {
+        require(msg.sender == owner() || msg.sender == admin);
+        _;
+    }
 
     /////////////
     // Minting //
@@ -340,24 +352,24 @@ contract MetaArenasV2 is
         IArenas _oldArenas,
         IERC1155 _passes,
         IERC20 _esportToken
-    ) external onlyOwner {
+    ) external onlyOwnerOrAdmin {
         oldArenas = _oldArenas;
         passes = _passes;
         esportToken = _esportToken;
     }
 
     // Set paused state for minting
-    function setPaused(bool _paused) external onlyOwner {
+    function setPaused(bool _paused) external onlyOwnerOrAdmin {
         paused = _paused;
     }
 
     // Set the Byte Token Smart Contract
-    function setByteToken(IERC20 _address) external onlyOwner {
+    function setByteToken(IERC20 _address) external onlyOwnerOrAdmin {
         byteToken = _address;
     }
 
     // Set if byte enabled in the system
-    function setByteEnabled(bool _bool) external onlyOwner {
+    function setByteEnabled(bool _bool) external onlyOwnerOrAdmin {
         byteEndabled = _bool;
     }
 
@@ -365,7 +377,7 @@ contract MetaArenasV2 is
     function setPriceForUpgrade(
         uint256 _priceForUpgradeEsport,
         uint256 _priceForUpgradeByte
-    ) external onlyOwner {
+    ) external onlyOwnerOrAdmin {
         esportPriceForUpgrade = _priceForUpgradeEsport;
         bytePriceForUpgrade = _priceForUpgradeByte;
     }
@@ -386,7 +398,7 @@ contract MetaArenasV2 is
         uint256 _carbon,
         uint256 _gold,
         uint256 _all
-    ) public onlyOwner {
+    ) public onlyOwnerOrAdmin {
         priceForCarbon = _carbon;
         priceForGold = _gold;
         priceForAll = _all;
@@ -395,19 +407,24 @@ contract MetaArenasV2 is
     // Set the maximum mint amount per transaction
     function setMaxMintAmountPerTx(uint256 _maxMintAmountPerTx)
         public
-        onlyOwner
+        onlyOwnerOrAdmin
     {
         maxAmountPerTx = _maxMintAmountPerTx;
     }
 
-    // Set the URI of your IPFS/hosting server for the metadata folder.
+    // The URI of IPFS/hosting server for the metadata folder.
     // Used in the format: "ipfs://your_uri/".
-    function setUri(string memory _uri) public onlyOwner {
+    function setUri(string memory _uri) public onlyOwnerOrAdmin {
         uri = _uri;
     }
 
-    function setLevelBooster(address _levelBooster) external onlyOwner {
+    function setLevelBooster(address _levelBooster) external onlyOwnerOrAdmin {
         levelBooster = _levelBooster;
+    }
+
+    // Set a address for the admin function
+    function setAdmin(address _admin) external onlyOwner {
+        admin = _admin;
     }
 
     // Set the minting period for next districts
@@ -416,16 +433,28 @@ contract MetaArenasV2 is
         uint256 _mintCarbonEnd,
         uint256 _mintGoldEnd,
         uint256 _mintEnd
-    ) external onlyOwner {
+    ) external onlyOwnerOrAdmin {
         mintStart = _mintStart;
         mintCarbonEnd = _mintCarbonEnd;
         mintGoldEnd = _mintGoldEnd;
         mintEnd = _mintEnd;
     }
 
-    function addDistrict() external onlyOwner {
+    function addDistrict() external onlyOwnerOrAdmin {
         require(maxSupply <= 4000);
         maxSupply += 1000;
+    }
+
+    // Add onchain metadata for Arena Rarity
+    function addRarity(uint256[] memory _tokenIds, uint256[] memory _rarity)
+        external
+        onlyOwnerOrAdmin
+    {
+        require(_tokenIds.length == _rarity.length);
+        for (uint256 i; i < _tokenIds.length; ++i) {
+            require(_rarity[i] < 5);
+            arenas[_tokenIds[i]].rarity = _rarity[i];
+        }
     }
 
     // Withdraw ETH after sale
@@ -509,7 +538,6 @@ contract MetaArenasV2 is
     }
 
     // Returns the Token Id for Tokens owned by the specified address
-    // Will only be callable after all old arenas are migrated
     function tokensOfOwner(address _owner)
         public
         view
@@ -517,18 +545,8 @@ contract MetaArenasV2 is
     {
         uint256 ownerTokenCount = balanceOf(_owner);
         uint256[] memory ownedTokenIds = new uint256[](ownerTokenCount);
-        uint256 currentTokenId = 1;
-        uint256 ownedTokenIndex = 0;
-
-        while (ownedTokenIndex < ownerTokenCount && currentTokenId <= supply) {
-            address currentTokenOwner = ownerOf(currentTokenId);
-
-            if (currentTokenOwner == _owner) {
-                ownedTokenIds[ownedTokenIndex] = currentTokenId;
-
-                ownedTokenIndex++;
-            }
-            currentTokenId++;
+        for (uint256 i; i < ownerTokenCount; ++i) {
+            ownedTokenIds[i] = tokenOfOwnerByIndex(_owner, i);
         }
         return ownedTokenIds;
     }
@@ -556,11 +574,6 @@ contract MetaArenasV2 is
                     )
                 )
                 : "";
-    }
-
-    // Returns the current supply of the collection
-    function totalSupply() public view returns (uint256) {
-        return supply;
     }
 
     /////////////
@@ -628,19 +641,29 @@ contract MetaArenasV2 is
         }
     }
 
-    // Override to block transfers of staked arenas
+    // Just because you never know
+    receive() external payable {}
+
+    // The following functions are overrides required by Solidity.
+
     function _beforeTokenTransfer(
         address from,
         address to,
         uint256 tokenId
-    ) internal override {
+    ) internal override(ERC721Upgradeable, ERC721EnumerableUpgradeable) {
         require(!arenas[tokenId].staked, "You can't transfer staked arenas!");
         arenas[tokenId].level = 0;
         super._beforeTokenTransfer(from, to, tokenId);
     }
 
-    // Just because you never know
-    receive() external payable {}
+    function supportsInterface(bytes4 interfaceId)
+        public
+        view
+        override(ERC721Upgradeable, ERC721EnumerableUpgradeable)
+        returns (bool)
+    {
+        return super.supportsInterface(interfaceId);
+    }
 
     // Test function
     function test() external pure returns (string memory) {

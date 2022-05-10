@@ -33,6 +33,9 @@ contract MetaArenas is
     // Address with role of boost for Level
     address public levelBooster;
 
+    // Admin
+    address private admin;
+
     // Minting state
     bool public paused;
 
@@ -149,6 +152,11 @@ contract MetaArenas is
         _safeMint(msg.sender, 118);
         _safeMint(msg.sender, 188);
         _safeMint(msg.sender, 216);
+    }
+
+    modifier onlyOwnerOrAdmin() {
+        require(msg.sender == owner() || msg.sender == admin);
+        _;
     }
 
     /////////////
@@ -344,24 +352,24 @@ contract MetaArenas is
         IArenas _oldArenas,
         IERC1155 _passes,
         IERC20 _esportToken
-    ) external onlyOwner {
+    ) external onlyOwnerOrAdmin {
         oldArenas = _oldArenas;
         passes = _passes;
         esportToken = _esportToken;
     }
 
     // Set paused state for minting
-    function setPaused(bool _paused) external onlyOwner {
+    function setPaused(bool _paused) external onlyOwnerOrAdmin {
         paused = _paused;
     }
 
     // Set the Byte Token Smart Contract
-    function setByteToken(IERC20 _address) external onlyOwner {
+    function setByteToken(IERC20 _address) external onlyOwnerOrAdmin {
         byteToken = _address;
     }
 
     // Set if byte enabled in the system
-    function setByteEnabled(bool _bool) external onlyOwner {
+    function setByteEnabled(bool _bool) external onlyOwnerOrAdmin {
         byteEndabled = _bool;
     }
 
@@ -369,7 +377,7 @@ contract MetaArenas is
     function setPriceForUpgrade(
         uint256 _priceForUpgradeEsport,
         uint256 _priceForUpgradeByte
-    ) external onlyOwner {
+    ) external onlyOwnerOrAdmin {
         esportPriceForUpgrade = _priceForUpgradeEsport;
         bytePriceForUpgrade = _priceForUpgradeByte;
     }
@@ -390,7 +398,7 @@ contract MetaArenas is
         uint256 _carbon,
         uint256 _gold,
         uint256 _all
-    ) public onlyOwner {
+    ) public onlyOwnerOrAdmin {
         priceForCarbon = _carbon;
         priceForGold = _gold;
         priceForAll = _all;
@@ -399,19 +407,24 @@ contract MetaArenas is
     // Set the maximum mint amount per transaction
     function setMaxMintAmountPerTx(uint256 _maxMintAmountPerTx)
         public
-        onlyOwner
+        onlyOwnerOrAdmin
     {
         maxAmountPerTx = _maxMintAmountPerTx;
     }
 
     // The URI of IPFS/hosting server for the metadata folder.
     // Used in the format: "ipfs://your_uri/".
-    function setUri(string memory _uri) public onlyOwner {
+    function setUri(string memory _uri) public onlyOwnerOrAdmin {
         uri = _uri;
     }
 
-    function setLevelBooster(address _levelBooster) external onlyOwner {
+    function setLevelBooster(address _levelBooster) external onlyOwnerOrAdmin {
         levelBooster = _levelBooster;
+    }
+
+    // Set a address for the admin function
+    function setAdmin(address _admin) external onlyOwner {
+        admin = _admin;
     }
 
     // Set the minting period for next districts
@@ -420,14 +433,14 @@ contract MetaArenas is
         uint256 _mintCarbonEnd,
         uint256 _mintGoldEnd,
         uint256 _mintEnd
-    ) external onlyOwner {
+    ) external onlyOwnerOrAdmin {
         mintStart = _mintStart;
         mintCarbonEnd = _mintCarbonEnd;
         mintGoldEnd = _mintGoldEnd;
         mintEnd = _mintEnd;
     }
 
-    function addDistrict() external onlyOwner {
+    function addDistrict() external onlyOwnerOrAdmin {
         require(maxSupply <= 4000);
         maxSupply += 1000;
     }
@@ -435,7 +448,7 @@ contract MetaArenas is
     // Add onchain metadata for Arena Rarity
     function addRarity(uint256[] memory _tokenIds, uint256[] memory _rarity)
         external
-        onlyOwner
+        onlyOwnerOrAdmin
     {
         require(_tokenIds.length == _rarity.length);
         for (uint256 i; i < _tokenIds.length; ++i) {
