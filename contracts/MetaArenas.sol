@@ -81,15 +81,6 @@ contract MetaArenas is
     // The file time for metadata
     string internal uriSuffix;
 
-    // // Levels needed to upgrade form tier 0 to tier 1
-    // uint256 public levelsForUpgradeOne;
-    // // Levels needed to upgrade form tier 1 to tier 2
-    // uint256 public levelsForUpgradeTwo;
-    // // Levels needed to upgrade form tier 2 to tier 3
-    // uint256 public levelsForUpgradeThree;
-    // // Levels needed to upgrade form tier 3 to tier 4
-    // uint256 public levelsForUpgradeFour;
-
     // The time a Arena has to be staked for it's Tier to be upgraded
     uint256 private timeToLevelUp;
 
