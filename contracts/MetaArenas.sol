@@ -81,17 +81,17 @@ contract MetaArenas is
     // The file time for metadata
     string internal uriSuffix;
 
-    // Levels needed to upgrade form tier to tier
-    uint256 public levelsForUpgrade;
+    // // Levels needed to upgrade form tier 0 to tier 1
+    // uint256 public levelsForUpgradeOne;
+    // // Levels needed to upgrade form tier 1 to tier 2
+    // uint256 public levelsForUpgradeTwo;
+    // // Levels needed to upgrade form tier 2 to tier 3
+    // uint256 public levelsForUpgradeThree;
+    // // Levels needed to upgrade form tier 3 to tier 4
+    // uint256 public levelsForUpgradeFour;
 
     // The time a Arena has to be staked for it's Tier to be upgraded
     uint256 private timeToLevelUp;
-
-    // Rewards of $ESPORT per hour per token deposited in wei
-    uint256 public rewardsPerHourEsport;
-
-    // Rewards of $BYTE per hour per token deposited in wei
-    uint256 public rewardsPerHourByte;
 
     // Rewards multiplier per tier
     uint256 public tierMultiplier;
@@ -102,6 +102,16 @@ contract MetaArenas is
     // Mapping of Token Id to staker. Made for the SC to remeber
     // who to send back the ERC721 Token to.
     mapping(uint256 => address) public stakerAddress;
+
+    // Mapping of levels needed to upgrade for each tier
+    mapping(uint256 => uint256) public levelsToUpgrade;
+
+    // Mapping of rewards multiplier for Arena Tier
+    // Tier rewards multipliers have 2 decimal
+    mapping(uint256 => uint256) public tierRewardsMultiplier;
+
+    // Mapping of rewards per day to Arena Rarity
+    mapping(uint256 => uint256) public rarityRewardsPerDay;
 
     // Arena info
     struct Arena {
@@ -140,10 +150,21 @@ contract MetaArenas is
         maxAmountPerTx = 3;
         maxSupply = 1000;
         uriSuffix = ".json";
-        levelsForUpgrade = 10;
-        timeToLevelUp = 259200; //172800;
-        rewardsPerHourEsport = 100000;
-        rewardsPerHourByte = 50000;
+        levelsToUpgrade[0] = 10;
+        levelsToUpgrade[1] = 30;
+        levelsToUpgrade[2] = 60;
+        levelsToUpgrade[3] = 100;
+        // Tier rewards multipliers have 2 decimal
+        tierRewardsMultiplier[0] = 10;
+        tierRewardsMultiplier[1] = 20;
+        tierRewardsMultiplier[2] = 35;
+        tierRewardsMultiplier[3] = 50;
+        rarityRewardsPerDay[0] = 1 * 10**18;
+        rarityRewardsPerDay[1] = 10 * 10**18;
+        rarityRewardsPerDay[2] = 25 * 10**18;
+        rarityRewardsPerDay[3] = 50 * 10**18;
+        rarityRewardsPerDay[4] = 100 * 10**18;
+        timeToLevelUp = 259200;
         tierMultiplier = 2;
         supply = 1000;
         paused = true;
@@ -321,7 +342,7 @@ contract MetaArenas is
         Arena memory _arena = arenas[_arenaTokenId];
         uint256 _level = calculateArenaLevel(_arenaTokenId);
         require(
-            _level >= (_arena.tier + 1) * levelsForUpgrade,
+            _level >= levelsToUpgrade[_arena.tier],
             "Not high enough level to upgrade"
         );
         esportToken.transferFrom(
@@ -380,17 +401,6 @@ contract MetaArenas is
     ) external onlyOwnerOrAdmin {
         esportPriceForUpgrade = _priceForUpgradeEsport;
         bytePriceForUpgrade = _priceForUpgradeByte;
-    }
-
-    // Set rewards (everyone needs to claim rewards or unstake their arena
-    // before the rewards per hour is set or they might lose some of their
-    // accumulated rewards)
-    function setRewardsPerHour(
-        uint256 _rewardsPerHourEsport,
-        uint256 _rewardsPerHourByte
-    ) external onlyOwner {
-        rewardsPerHourEsport = _rewardsPerHourEsport;
-        rewardsPerHourByte = _rewardsPerHourByte;
     }
 
     // Set the mint cost of one NFT
@@ -457,6 +467,23 @@ contract MetaArenas is
         }
     }
 
+    // Set the reawards per day based on Arena rarity
+    function setRarityRewards(uint256 _rarity, uint256 _rewards)
+        external
+        onlyOwnerOrAdmin
+    {
+        rarityRewardsPerDay[_rarity] = _rewards;
+    }
+
+    // Set the rewards multiplier for Arena tier
+    // Set with one decimal(exaplme: 10 == 1.0)
+    function setTierMultiplier(uint256 _tier, uint256 _multiplier)
+        external
+        onlyOwnerOrAdmin
+    {
+        tierRewardsMultiplier[_tier] = _multiplier;
+    }
+
     // Withdraw ETH after sale
     function withdraw(uint256 _amountEsport, uint256 _amountByte)
         public
@@ -511,27 +538,20 @@ contract MetaArenas is
         returns (
             uint256 arenaTier_,
             uint256 arenaLevel_,
-            uint256 timeToWaitForLevelUp_,
+            uint256 arenaRarity_,
             bool staked_,
             bool canUpgrade_
         )
     {
         uint256 _arenaTier = arenas[_arenaTokenId].tier;
         bool _canUpgrade = arenas[_arenaTokenId].level >=
-            (arenas[_arenaTokenId].tier + 1) * levelsForUpgrade;
+            levelsToUpgrade[arenas[_arenaTokenId].tier];
         uint256 _arenaLevel = calculateArenaLevel(_arenaTokenId);
-        uint256 _timeToWaitForLevelUp;
-        if (arenas[_arenaTokenId].staked) {
-            _timeToWaitForLevelUp =
-                (timeToLevelUp * (_arenaLevel + 1)) -
-                (block.timestamp - arenas[_arenaTokenId].timeOfStake);
-        } else {
-            _timeToWaitForLevelUp = timeToLevelUp;
-        }
+        uint256 _arenaRarity = arenas[_arenaTokenId].rarity;
         return (
             _arenaTier,
             _arenaLevel,
-            _timeToWaitForLevelUp,
+            _arenaRarity,
             arenas[_arenaTokenId].staked,
             _canUpgrade
         );
@@ -593,24 +613,6 @@ contract MetaArenas is
         }
     }
 
-    // Calculate rewards for param _staker by calculating the time passed
-    // since last update in hours and mulitplying it to ERC721 Tokens Staked
-    // and rewardsPerHour.
-    function calculateRewardsEsport(uint256 _arenaTokenId)
-        internal
-        view
-        returns (uint256 _rewards)
-    {
-        if (arenas[_arenaTokenId].staked) {
-            return ((((block.timestamp -
-                arenas[_arenaTokenId].timeOfLastRewardUpdate) *
-                rewardsPerHourEsport) *
-                (arenas[_arenaTokenId].tier + tierMultiplier)) / 3600);
-        } else {
-            return 0;
-        }
-    }
-
     function calculateRewardsByte(uint256 _arenaTokenId)
         internal
         view
@@ -619,8 +621,23 @@ contract MetaArenas is
         if (arenas[_arenaTokenId].staked) {
             return ((((block.timestamp -
                 arenas[_arenaTokenId].timeOfLastRewardUpdate) *
-                rewardsPerHourByte) *
-                (arenas[_arenaTokenId].tier + tierMultiplier)) / 3600);
+                tierRewardsMultiplier[arenas[_arenaTokenId].tier]) *
+                (rarityRewardsPerDay[arenas[_arenaTokenId].rarity])) / 864000);
+        } else {
+            return 0;
+        }
+    }
+
+    function calculateRewardsEsport(uint256 _arenaTokenId)
+        internal
+        view
+        returns (uint256 _rewards)
+    {
+        if (arenas[_arenaTokenId].staked) {
+            return ((((block.timestamp -
+                arenas[_arenaTokenId].timeOfLastRewardUpdate) *
+                tierRewardsMultiplier[arenas[_arenaTokenId].tier]) *
+                (rarityRewardsPerDay[arenas[_arenaTokenId].rarity])) / 864000);
         } else {
             return 0;
         }
