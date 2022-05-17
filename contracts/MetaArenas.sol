@@ -150,7 +150,7 @@ contract MetaArenas is
         tierRewardsMultiplier[1] = 20;
         tierRewardsMultiplier[2] = 35;
         tierRewardsMultiplier[3] = 50;
-        rarityRewardsPerDay[0] = 1 * 10**18;
+        rarityRewardsPerDay[0] = 5 * 10**18;
         rarityRewardsPerDay[1] = 10 * 10**18;
         rarityRewardsPerDay[2] = 25 * 10**18;
         rarityRewardsPerDay[3] = 50 * 10**18;
@@ -447,7 +447,7 @@ contract MetaArenas is
     }
 
     // Add onchain metadata for Arena Rarity
-    function addRarity(uint256[] memory _tokenIds, uint256[] memory _rarity)
+    function setRarity(uint256[] memory _tokenIds, uint256[] memory _rarity)
         external
         onlyOwnerOrAdmin
     {
@@ -475,7 +475,7 @@ contract MetaArenas is
         tierRewardsMultiplier[_tier] = _multiplier;
     }
 
-    // Withdraw ETH after sale
+    // Withdraw Tokens
     function withdraw(uint256 _amountEsport, uint256 _amountByte)
         public
         onlyOwner
