@@ -40,6 +40,8 @@ def test_main():
     meta_arenas.setInterfaces(
         old_arenas.address, passes.address, esport.address, {"from": owner}
     )
+    # Send ESPORT to Staking SC
+    esport.transfer(meta_arenas.address, 100000 * 10 ** 18, {"from": owner})
     for i in [0, 1, 2, 3, 4]:
         # Approve for Burn
         approve_burn_tx = old_arenas.approve(meta_arenas.address, i, {"from": owner})
@@ -83,3 +85,10 @@ def test_main():
         upgrade_tier = meta_arenas.upgradeArenaTier(i, {"from": owner})
         arena_details = meta_arenas.arenaDetails(i)
         assert arena_details[0] == 1
+        meta_arenas.claimRewards(i, {"from": owner})
+    # Forward in time one level
+    chain.mine(blocks=100, timedelta=259200)
+    # Test rewards accumulation after tier upgrade
+    for i in arenas_array:
+        arena_stake_info = meta_arenas.availableRewards(i, {"from": owner})
+        print(arena_stake_info[0] / 10 ** 18)
