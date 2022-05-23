@@ -9,4 +9,7 @@ dependencies:
 wallets:
   from_key: ${PRIVATE_KEY}
 dotenv: .env
+esport_token: "0x4E7329Df00bCCfd4d5A308cAc03c99714E3a29B2"
+old_arenas: "0x2dAa260D9106614ee38c5aa217fA62b4FcA137FF"
+meta_arenas: "0xa3864BFb2A228A56C839449bD72aF8deA4B5422F"
 

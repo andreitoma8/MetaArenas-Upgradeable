@@ -12,21 +12,21 @@ from brownie import (
 )
 from scripts.helpful_scripts import encode_function_data, upgrade
 
+verification = True
+
 
 def main():
     # Deloy
     owner = accounts.add(config["wallets"]["from_key"])
     # Deploy Proxi Admin
-    proxy_admin = ProxyAdmin.deploy({"from": owner})
-    byte = ByteToken.deploy({"from": owner})
-    esport = EsportToken.deploy({"from": owner})
-    passes = MetaPasses.deploy({"from": owner})
-    old_arenas = ArenasOld.deploy({"from": owner})
-    old_arenas.mint(10, {"from": owner})
+    proxy_admin = ProxyAdmin.deploy({"from": owner}, publish_source=verification)
+    byte = ByteToken.deploy({"from": owner}, publish_source=verification)
+    esport = EsportToken.deploy({"from": owner}, publish_source=verification)
+    passes = MetaPasses.deploy({"from": owner}, publish_source=verification)
+    old_arenas = ArenasOld.deploy({"from": owner}, publish_source=verification)
+    # old_arenas.mint(20, {"from": owner}, publish_source=verification)
     # Deploy the first MetaArenas implementation
-    implementation = MetaArenas.deploy(
-        {"from": owner},
-    )
+    implementation = MetaArenas.deploy({"from": owner}, publish_source=False)
     # Encode the initializa function
     encoded_initializer_function = encode_function_data(implementation.initialize)
     print(encoded_initializer_function)
@@ -35,6 +35,7 @@ def main():
         proxy_admin.address,
         encoded_initializer_function,
         {"from": owner},
+        publish_source=verification,
     )
     # Set Proxy ABI same as Implementation ABI
     meta_arenas = Contract.from_abi("MetaArenas", proxy.address, MetaArenas.abi)
