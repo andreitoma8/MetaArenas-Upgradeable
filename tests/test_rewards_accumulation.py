@@ -86,7 +86,7 @@ def test_main():
         arena_details = meta_arenas.arenaDetails(i)
         assert arena_details[0] == 1
         meta_arenas.claimRewards(i, {"from": owner})
-    # Forward in time one level
+    # Forward in time until tier upgrade
     chain.mine(blocks=100, timedelta=259200)
     # Test rewards accumulation after tier upgrade
     for i in arenas_array:

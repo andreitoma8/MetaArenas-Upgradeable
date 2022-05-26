@@ -28,7 +28,7 @@ contract ArenasOld is ERC721, Ownable, ERC721Burnable {
     uint256 public cost;
 
     // The maximum supply of your collection
-    uint256 public maxSupply = 10000;
+    uint256 public maxSupply = 1000;
 
     // The maximum mint amount allowed per transaction
     uint256 public maxMintAmountPerTx = 10;
