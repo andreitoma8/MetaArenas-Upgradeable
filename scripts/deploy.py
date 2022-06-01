@@ -10,9 +10,10 @@ from brownie import (
     accounts,
     config,
 )
-from scripts.helpful_scripts import encode_function_data, upgrade
+from scripts.helpful_scripts import encode_function_data, getArenaRarities
+import csv
 
-verification = True
+verification = False
 
 
 def main():
@@ -47,3 +48,7 @@ def main():
     approve_burn_tx = old_arenas.approve(meta_arenas.address, 0, {"from": owner})
     # Migrate Arena
     migrate_tx = meta_arenas.migrateArena(0, {"from": owner})
+    # Set arena rarity
+    values = getArenaRarities()
+    meta_arenas.setRarity(values[0], values[1], {"from": owner})
+    print(meta_arenas.arenaDetails(1))

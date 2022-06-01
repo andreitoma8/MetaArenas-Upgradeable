@@ -1,5 +1,6 @@
 from brownie import network, accounts, config
 import eth_utils
+import csv
 
 NON_FORKED_LOCAL_BLOCKCHAIN_ENVIRONMENTS = ["hardhat", "development", "ganache"]
 LOCAL_BLOCKCHAIN_ENVIRONMENTS = NON_FORKED_LOCAL_BLOCKCHAIN_ENVIRONMENTS + [
@@ -74,3 +75,28 @@ def upgrade(
         else:
             transaction = proxy.upgradeTo(newimplementation_address, {"from": account})
     return transaction
+
+
+def getArenaRarities():
+    with open("metadata.txt", newline="") as csvfile:
+        rows = csv.reader(csvfile, delimiter=",")
+        data = []
+        for row in rows:
+            data.append(row)
+
+    arenas_rariy = []
+    for item in data:
+        if item[7] == "Common":
+            arenas_rariy.append(0)
+        if item[7] == "Uncommon":
+            arenas_rariy.append(1)
+        if item[7] == "Rare":
+            arenas_rariy.append(2)
+        if item[7] == "Epic":
+            arenas_rariy.append(3)
+        if item[7] == "Legendary":
+            arenas_rariy.append(4)
+    token_ids = []
+    for i in range(1, 1001):
+        token_ids.append(i)
+    return (token_ids, arenas_rariy)

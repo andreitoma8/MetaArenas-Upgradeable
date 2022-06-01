@@ -5,3 +5,5 @@ __pycache__
 build/
 reports/
 scripts/update_uri.py
+scripts/update_arena_rarity.py
+metadata.txt

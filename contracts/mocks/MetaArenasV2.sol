@@ -9,7 +9,7 @@ import "@openzeppelin/contracts-upgradeable/contracts/proxy/utils/Initializable.
 import "@openzeppelin/contracts-upgradeable/contracts/security/ReentrancyGuardUpgradeable.sol";
 import "@openzeppelin/contracts/token/ERC1155/IERC1155.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "../interfaces/IArenas.sol";
+import "../../interfaces/IArenas.sol";
 
 contract MetaArenasV2 is
     Initializable,
