@@ -13,7 +13,7 @@ from brownie import (
 from scripts.helpful_scripts import encode_function_data, getArenaRarities
 import csv
 
-verification = False
+verification = True
 
 
 def main():
@@ -21,7 +21,7 @@ def main():
     owner = accounts.add(config["wallets"]["from_key"])
     # Deploy Proxi Admin
     proxy_admin = ProxyAdmin.deploy({"from": owner}, publish_source=verification)
-    byte = ByteToken.deploy({"from": owner}, publish_source=verification)
+    # byte = ByteToken.deploy({"from": owner}, publish_source=verification)
     esport = EsportToken.deploy({"from": owner}, publish_source=verification)
     passes = MetaPasses.deploy({"from": owner}, publish_source=verification)
     old_arenas = ArenasOld.deploy({"from": owner}, publish_source=verification)

@@ -162,7 +162,7 @@ contract ArenasOld is ERC721, Ownable, ERC721Burnable {
         }
 
         string memory currentBaseURI = _baseURI();
-        uint256 tokenIdToReturn = _tokenId - 1;
+        uint256 tokenIdToReturn = _tokenId + 1;
         return
             bytes(currentBaseURI).length > 0
                 ? string(

@@ -141,6 +141,7 @@ contract MetaArenas is
         maxAmountPerTx = 3;
         maxSupply = 1000;
         uriSuffix = ".json";
+        uri = "ipfs://QmWK4ceuQQ1TJiFv47DcbLckVLXEPuhSo39Zio2e5aPQRt/";
         levelsToUpgrade[0] = 10;
         levelsToUpgrade[1] = 30;
         levelsToUpgrade[2] = 60;
