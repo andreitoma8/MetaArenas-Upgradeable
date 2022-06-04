@@ -11,7 +11,6 @@ from brownie import (
     config,
 )
 from scripts.helpful_scripts import encode_function_data, getArenaRarities
-import csv
 
 verification = True
 
@@ -21,10 +20,16 @@ def main():
     owner = accounts.add(config["wallets"]["from_key"])
     # Deploy Proxi Admin
     proxy_admin = ProxyAdmin.deploy({"from": owner}, publish_source=verification)
-    # byte = ByteToken.deploy({"from": owner}, publish_source=verification)
     esport = EsportToken.deploy({"from": owner}, publish_source=verification)
     passes = MetaPasses.deploy({"from": owner}, publish_source=verification)
     old_arenas = ArenasOld.deploy({"from": owner}, publish_source=verification)
+    # Just for tests:
+    for address in [
+        "0x6ff7095144c856422c09102Bf0606506Dae6f370",
+        "0x436d8Fa63c672797Fa7E30B0dc19dA42D50ebA51",
+        "0x3D59f41684af9aB653bCFAc982c4595238E5D11e",
+    ]:
+        old_arenas.mintForAddress(20, address, {"from": owner})
     # old_arenas.mint(20, {"from": owner}, publish_source=verification)
     # Deploy the first MetaArenas implementation
     implementation = MetaArenas.deploy({"from": owner}, publish_source=False)

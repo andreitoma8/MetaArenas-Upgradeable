@@ -110,7 +110,6 @@ contract ArenasOld is ERC721, Ownable, ERC721Burnable {
     // Mint function for owner that allows for free minting for a specified address
     function mintForAddress(uint256 _mintAmount, address _receiver)
         public
-        mintCompliance(_mintAmount)
         onlyOwner
     {
         _mintLoop(_receiver, _mintAmount);
