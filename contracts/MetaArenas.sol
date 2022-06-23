@@ -25,8 +25,8 @@ contract MetaArenas is
     IArenas public oldArenas;
     // Interface for MetaPass Collection
     IERC1155 public passes;
-    // Interface for ESPORT Token
-    IERC20 public esportToken;
+    // Interface for ARENA Token
+    IERC20 public arenaToken;
     // Interface for BYTE token
     IERC20 public byteToken;
 
@@ -61,8 +61,8 @@ contract MetaArenas is
     // Time of minting end for everyone(Unix Time)
     uint256 public mintEnd;
 
-    // ESPORT price for first Tier upgrade
-    uint256 public esportPriceForUpgrade;
+    // ARENA price for first Tier upgrade
+    uint256 public arenaPriceForUpgrade;
 
     // BYTE price for first Tier upgrade
     uint256 public bytePriceForUpgrade;
@@ -120,7 +120,7 @@ contract MetaArenas is
         uint256 timeOfLastRewardUpdate;
         // Calculated, but unclaimed rewards for the User. The rewards are
         // calculated each time the user writes to the Smart Contract
-        uint256 unclaimedRewardsEsport;
+        uint256 unclaimedRewardsArena;
         uint256 unclaimedRewardsByte;
     }
 
@@ -136,7 +136,7 @@ contract MetaArenas is
         priceForCarbon = 10 * 10**18;
         priceForGold = 15 * 10**18;
         priceForAll = 20 * 10**18;
-        esportPriceForUpgrade = 100 * 10**18;
+        arenaPriceForUpgrade = 100 * 10**18;
         bytePriceForUpgrade = 200 * 10**18;
         maxAmountPerTx = 3;
         maxSupply = 1000;
@@ -195,14 +195,14 @@ contract MetaArenas is
     }
 
     // Mint function
-    // Need to approve ESPORT token transfer before calling
+    // Need to approve ARENA token transfer before calling
     function mint(uint256 _amount) external payable mintCompliance(_amount) {
         if (block.timestamp >= mintStart && block.timestamp <= mintCarbonEnd) {
             require(
                 passes.balanceOf(msg.sender, 0) > 0,
                 "You don't own Carbon MetaPass"
             );
-            esportToken.transferFrom(
+            arenaToken.transferFrom(
                 msg.sender,
                 address(this),
                 priceForCarbon * _amount
@@ -213,13 +213,13 @@ contract MetaArenas is
                     passes.balanceOf(msg.sender, 0) > 0,
                 "You don't own Carbon or Gold MetaPass"
             );
-            esportToken.transferFrom(
+            arenaToken.transferFrom(
                 msg.sender,
                 address(this),
                 priceForGold * _amount
             );
         } else if (block.timestamp <= mintEnd) {
-            esportToken.transferFrom(
+            arenaToken.transferFrom(
                 msg.sender,
                 address(this),
                 priceForAll * _amount
@@ -266,8 +266,8 @@ contract MetaArenas is
         );
         Arena memory _arena = arenas[_arenaTokenId];
         require(_arena.staked, "Arena is not staked!");
-        uint256 esportRewards = calculateRewardsEsport(_arenaTokenId);
-        _arena.unclaimedRewardsEsport += esportRewards;
+        uint256 arenaRewards = calculateRewardsArena(_arenaTokenId);
+        _arena.unclaimedRewardsArena += arenaRewards;
         uint256 byteRewards = calculateRewardsByte(_arenaTokenId);
         _arena.unclaimedRewardsByte += byteRewards;
         _arena.staked = false;
@@ -295,9 +295,9 @@ contract MetaArenas is
             msg.sender == ownerOf(_arenaTokenId),
             "You don't own this arena!"
         );
-        uint256 esportRewards = calculateRewardsEsport(_arenaTokenId) +
-            arenas[_arenaTokenId].unclaimedRewardsEsport;
-        require(esportRewards > 0, "You have no rewards to claim");
+        uint256 arenaRewards = calculateRewardsArena(_arenaTokenId) +
+            arenas[_arenaTokenId].unclaimedRewardsArena;
+        require(arenaRewards > 0, "You have no rewards to claim");
         if (byteEndabled) {
             uint256 byteRewards = calculateRewardsByte(_arenaTokenId) +
                 arenas[_arenaTokenId].unclaimedRewardsByte;
@@ -306,8 +306,8 @@ contract MetaArenas is
             byteToken.transfer(msg.sender, byteRewards);
         }
         arenas[_arenaTokenId].timeOfLastRewardUpdate = block.timestamp;
-        arenas[_arenaTokenId].unclaimedRewardsEsport = 0;
-        esportToken.transfer(msg.sender, esportRewards);
+        arenas[_arenaTokenId].unclaimedRewardsArena = 0;
+        arenaToken.transfer(msg.sender, arenaRewards);
     }
 
     ////////////////////
@@ -337,12 +337,12 @@ contract MetaArenas is
             _level >= levelsToUpgrade[_arena.tier],
             "Not high enough level to upgrade"
         );
-        esportToken.transferFrom(
+        arenaToken.transferFrom(
             msg.sender,
             address(this),
-            esportPriceForUpgrade * _arena.tier
+            arenaPriceForUpgrade * _arena.tier
         );
-        _arena.unclaimedRewardsEsport += calculateRewardsEsport(_arenaTokenId);
+        _arena.unclaimedRewardsArena += calculateRewardsArena(_arenaTokenId);
         if (byteEndabled) {
             byteToken.transferFrom(
                 msg.sender,
@@ -364,11 +364,11 @@ contract MetaArenas is
     function setInterfaces(
         IArenas _oldArenas,
         IERC1155 _passes,
-        IERC20 _esportToken
+        IERC20 _arenaToken
     ) external onlyOwnerOrAdmin {
         oldArenas = _oldArenas;
         passes = _passes;
-        esportToken = _esportToken;
+        arenaToken = _arenaToken;
     }
 
     // Set paused state for minting
@@ -388,10 +388,10 @@ contract MetaArenas is
 
     // Set the prices for Arena Upgrade
     function setPriceForUpgrade(
-        uint256 _priceForUpgradeEsport,
+        uint256 _priceForUpgradeArena,
         uint256 _priceForUpgradeByte
     ) external onlyOwnerOrAdmin {
-        esportPriceForUpgrade = _priceForUpgradeEsport;
+        arenaPriceForUpgrade = _priceForUpgradeArena;
         bytePriceForUpgrade = _priceForUpgradeByte;
     }
 
@@ -477,13 +477,13 @@ contract MetaArenas is
     }
 
     // Withdraw Tokens
-    function withdraw(uint256 _amountEsport, uint256 _amountByte)
+    function withdraw(uint256 _amountArena, uint256 _amountByte)
         public
         onlyOwner
     {
-        uint256 _balanceEsport = esportToken.balanceOf(address(this));
-        require(_amountEsport <= _balanceEsport);
-        esportToken.transfer(msg.sender, _amountEsport);
+        uint256 _balanceArena = arenaToken.balanceOf(address(this));
+        require(_amountArena <= _balanceArena);
+        arenaToken.transfer(msg.sender, _amountArena);
         if (byteEndabled) {
             uint256 _balanceByte = byteToken.balanceOf(address(this));
             require(_amountByte <= _balanceByte);
@@ -510,8 +510,8 @@ contract MetaArenas is
         view
         returns (uint256, uint256)
     {
-        uint256 _rewardsEsport = arenas[_arenaTokenId].unclaimedRewardsEsport +
-            calculateRewardsEsport(_arenaTokenId);
+        uint256 _rewardsArena = arenas[_arenaTokenId].unclaimedRewardsArena +
+            calculateRewardsArena(_arenaTokenId);
         uint256 _rewardsByte;
         if (byteEndabled) {
             _rewardsByte =
@@ -520,7 +520,7 @@ contract MetaArenas is
         } else {
             _rewardsByte = 0;
         }
-        return (_rewardsEsport, _rewardsByte);
+        return (_rewardsArena, _rewardsByte);
     }
 
     // Returns arena detalis for Arena Token ID passed as arg
@@ -620,7 +620,7 @@ contract MetaArenas is
         }
     }
 
-    function calculateRewardsEsport(uint256 _arenaTokenId)
+    function calculateRewardsArena(uint256 _arenaTokenId)
         internal
         view
         returns (uint256 _rewards)
