@@ -34,7 +34,7 @@ contract ArenasOld is ERC721, Ownable, ERC721Burnable {
     uint256 public maxMintAmountPerTx = 10;
 
     // The paused state for minting
-    bool public paused = true;
+    bool public paused = false;
 
     // The revealed state for Tokens Metadata
     bool public revealed = false;
