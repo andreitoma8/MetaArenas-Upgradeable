@@ -144,15 +144,15 @@ contract MetaArenas is
         levelsToUpgrade[2] = 60;
         levelsToUpgrade[3] = 100;
         // Tier rewards multipliers have 2 decimal
-        tierRewardsMultiplier[0] = 10;
-        tierRewardsMultiplier[1] = 20;
-        tierRewardsMultiplier[2] = 35;
-        tierRewardsMultiplier[3] = 50;
-        rarityRewardsPerDay[0] = (10 * 10**18) / 10;
-        rarityRewardsPerDay[1] = (15 * 10**18) / 10;
-        rarityRewardsPerDay[2] = (20 * 10**18) / 10;
-        rarityRewardsPerDay[3] = (35 * 10**18) / 10;
-        rarityRewardsPerDay[4] = (50 * 10**18) / 10;
+        tierRewardsMultiplier[0] = 5;
+        tierRewardsMultiplier[1] = 10;
+        tierRewardsMultiplier[2] = 20;
+        tierRewardsMultiplier[3] = 30;
+        rarityRewardsPerDay[0] = (24 * 10**18);
+        rarityRewardsPerDay[1] = (36 * 10**18);
+        rarityRewardsPerDay[2] = (48 * 10**18);
+        rarityRewardsPerDay[3] = (84 * 10**18);
+        rarityRewardsPerDay[4] = (120 * 10**18);
         timeToLevelUp = 259200;
         supply = 1000;
         paused = true;
