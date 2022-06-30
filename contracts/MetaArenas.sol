@@ -528,20 +528,20 @@ contract MetaArenas is
             uint256 arenaLevel_,
             uint256 arenaRarity_,
             bool staked_,
-            bool canUpgrade_
+            bool canUpgrade_,
+            uint256 timeOfStake_
         )
     {
-        uint256 _arenaTier = arenas[_arenaTokenId].tier;
         bool _canUpgrade = arenas[_arenaTokenId].level >=
             levelsToUpgrade[arenas[_arenaTokenId].tier];
         uint256 _arenaLevel = calculateArenaLevel(_arenaTokenId);
-        uint256 _arenaRarity = arenas[_arenaTokenId].rarity;
         return (
-            _arenaTier,
+            arenas[_arenaTokenId].tier,
             _arenaLevel,
-            _arenaRarity,
+            arenas[_arenaTokenId].rarity,
             arenas[_arenaTokenId].staked,
-            _canUpgrade
+            _canUpgrade,
+            arenas[_arenaTokenId].timeOfStake
         );
     }
 
