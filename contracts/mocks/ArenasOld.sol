@@ -16,7 +16,7 @@ contract ArenasOld is ERC721, Ownable, ERC721Burnable {
     // The URI of your IPFS/hosting server for the metadata folder.
     // Used in the format: "ipfs://your_uri/".
     string internal uri =
-        "ipfs://QmWK4ceuQQ1TJiFv47DcbLckVLXEPuhSo39Zio2e5aPQRt/";
+        "ipfs://QmVMheFDhqt2jbyTY7cBWZ6YVMbPmyrpUMfFyytndhkMFZ/";
 
     // The format of your metadata files
     string internal uriSuffix = ".json";

@@ -11,7 +11,7 @@ import "@openzeppelin/contracts/token/ERC1155/IERC1155.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "../interfaces/IArenas.sol";
 
-contract MetaArenas is
+contract Metarenas is
     Initializable,
     ERC721Upgradeable,
     OwnableUpgradeable,
@@ -127,7 +127,7 @@ contract MetaArenas is
     constructor() initializer {}
 
     function initialize() public initializer {
-        __ERC721_init("MetaArenas", "MARE");
+        __ERC721_init("Metarenas", "ARENA");
         __Ownable_init();
         __ReentrancyGuard_init();
         priceForCarbon = 10 * 10**18;
@@ -138,7 +138,7 @@ contract MetaArenas is
         maxAmountPerTx = 3;
         maxSupply = 1000;
         uriSuffix = ".json";
-        uri = "ipfs://QmWK4ceuQQ1TJiFv47DcbLckVLXEPuhSo39Zio2e5aPQRt/";
+        uri = "ipfs://QmVRMKQ678EY2bAzAYuKohpuFFCM9SLBNGm4xpH6KJ4QGe/";
         levelsToUpgrade[0] = 10;
         levelsToUpgrade[1] = 30;
         levelsToUpgrade[2] = 60;
