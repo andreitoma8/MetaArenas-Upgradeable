@@ -20,7 +20,7 @@ def main():
     # Deploy Proxy Admin
     proxy_admin = ProxyAdmin.deploy({"from": owner}, publish_source=verification)
     # Deploy implementation SC
-    implementation = Metarenas.deploy({"from": owner}, publish_source=False)
+    implementation = Metarenas.deploy({"from": owner}, publish_source=verification)
     # Encode initializer function
     encoded_initializer_function = encode_function_data(implementation.initialize)
     # Deploy and initialize proxy contract

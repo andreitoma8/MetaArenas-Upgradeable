@@ -1,9 +1,8 @@
 from brownie import (
     Contract,
-    MetaArenas,
+    Metarenas,
     ArenasOld,
-    EsportToken,
-    ByteToken,
+    ArenaToken,
     MetaPasses,
     ProxyAdmin,
     TransparentUpgradeableProxy,
@@ -20,7 +19,7 @@ def main():
     owner = accounts.add(config["wallets"]["from_key"])
     # Deploy Proxi Admin
     proxy_admin = ProxyAdmin.deploy({"from": owner}, publish_source=verification)
-    esport = EsportToken.deploy({"from": owner}, publish_source=verification)
+    arena = ArenaToken.deploy({"from": owner}, publish_source=verification)
     passes = MetaPasses.deploy({"from": owner}, publish_source=verification)
     old_arenas = ArenasOld.deploy({"from": owner}, publish_source=verification)
     # Just for tests:
@@ -32,7 +31,7 @@ def main():
     #     old_arenas.mintForAddress(10, address, {"from": owner})
     # old_arenas.mint(20, {"from": owner}, publish_source=verification)
     # Deploy the first MetaArenas implementation
-    implementation = MetaArenas.deploy({"from": owner}, publish_source=False)
+    implementation = Metarenas.deploy({"from": owner}, publish_source=verification)
     # Encode the initializa function
     encoded_initializer_function = encode_function_data(implementation.initialize)
     print(encoded_initializer_function)
@@ -44,10 +43,10 @@ def main():
         publish_source=verification,
     )
     # Set Proxy ABI same as Implementation ABI
-    meta_arenas = Contract.from_abi("MetaArenas", proxy.address, MetaArenas.abi)
+    meta_arenas = Contract.from_abi("Metarenas", proxy.address, Metarenas.abi)
     # Set the Address for interfaces in proxy
     meta_arenas.setInterfaces(
-        old_arenas.address, passes.address, esport.address, {"from": owner}
+        old_arenas.address, passes.address, arena.address, {"from": owner}
     )
     # # Approve for Burn
     # approve_burn_tx = old_arenas.approve(meta_arenas.address, 0, {"from": owner})
@@ -56,4 +55,4 @@ def main():
     # Set arena rarity
     values = getArenaRarities()
     meta_arenas.setRarity(values[0], values[1], {"from": owner})
-    print(meta_arenas.arenaDetails(1))
+    # print(meta_arenas.arenaDetails(1))

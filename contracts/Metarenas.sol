@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: MIT
-// Creator: andreitoma8
 pragma solidity ^0.8.4;
 
 import "@upopenzeppelin/contracts-upgradeable/contracts/token/ERC721/ERC721Upgradeable.sol";
@@ -11,6 +10,9 @@ import "@openzeppelin/contracts/token/ERC1155/IERC1155.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "../interfaces/IArenas.sol";
 
+/// @title Metarena Upgradable Smart Contract with non-custodial staking.
+/// @author Andrei Toma
+/// @notice Made using Upgradable Contracts from OpenZeppelin.
 contract Metarenas is
     Initializable,
     ERC721Upgradeable,
@@ -33,7 +35,7 @@ contract Metarenas is
     // Address with role of boost for Level
     address public levelBooster;
 
-    // Admin
+    // Admin address
     address private admin;
 
     // Minting state
@@ -75,21 +77,17 @@ contract Metarenas is
     // over 4000.
     uint256 private maxSupply;
 
-    // Uri for metadata
+    // URI for metadata
     string internal uri;
 
-    // The file time for metadata
+    // The file tipe for metadata
     string internal uriSuffix;
 
-    // The time a Arena has to be staked for it's Tier to be upgraded
+    // The time a Arena has to be staked for its Tier to be upgraded
     uint256 private timeToLevelUp;
 
-    // User arenas staked
+    // Mapping of wallet address to staked Token IDs
     mapping(address => uint256[]) userArenasStaked;
-
-    // Mapping of Token Id to staker. Made for the SC to remeber
-    // who to send back the ERC721 Token to.
-    mapping(uint256 => address) public stakerAddress;
 
     // Mapping of levels needed to upgrade for each tier
     mapping(uint256 => uint256) public levelsToUpgrade;
@@ -107,25 +105,25 @@ contract Metarenas is
         bool staked;
         // Tier of the arena
         uint256 tier;
-        // XP Level of the arena
+        // Level of the arena
         uint256 level;
         // Rarity of the Arena(0: Common, 1: Uncommon, 2: Rare, 3: Epic, 4: Legendary)
         uint256 rarity;
-        // The time arena was staked at
+        // The time Arena was staked at
         uint256 timeOfStake;
-        // Last time of details update for this Arena
+        // Last time of update for this Arena
         uint256 timeOfLastRewardUpdate;
-        // Calculated, but unclaimed rewards for the User. The rewards are
-        // calculated each time the user writes to the Smart Contract
+        // Calculated, but unclaimed rewards for the Arena
         uint256 unclaimedRewardsArena;
         uint256 unclaimedRewardsByte;
     }
 
-    // Mapping of Arena Token ID to Arena info
+    // Mapping of Arena Token ID to Arena info struct
     mapping(uint256 => Arena) public arenas;
 
     constructor() initializer {}
 
+    /// @notice function used in the OpenZeppelin Upgradable Contracts to initialize values in Transparent Proxy Contract
     function initialize() public initializer {
         __ERC721_init("Metarenas", "ARENA");
         __Ownable_init();
@@ -163,17 +161,14 @@ contract Metarenas is
         _safeMint(msg.sender, 216);
     }
 
+    /// @notice modifier used for functions where only the Owner or the Admin have access
     modifier onlyOwnerOrAdmin() {
         require(msg.sender == owner() || msg.sender == admin);
         _;
     }
 
-    /////////////
-    // Minting //
-    /////////////
-
-    // Assures the mint per transaction amount and
-    // the max supply are respected
+    /// @notice assures the mint per transaction amount and the max supply are respected
+    /// @param _amount the amount to mint
     modifier mintCompliance(uint256 _amount) {
         require(
             _amount <= maxAmountPerTx,
@@ -184,14 +179,17 @@ contract Metarenas is
         _;
     }
 
-    // Function for Arena NFT migration from the old collection
+    /// @notice function for Arena NFT migration from the old collection
+    /// @param _tokenId the token ID for the arena to be burned from the old Arena Contract
+    /// @dev approve() function should be already called with the address of this Contract and the same token ID
     function migrateArena(uint256 _tokenId) external {
         oldArenas.burn(_tokenId);
         _safeMint(msg.sender, _tokenId + 1);
     }
 
-    // Mint function
-    // Need to approve ARENA token transfer before calling
+    /// @notice mint function with 3 stages with access and prices based on Metapasses ownership
+    /// @param _amount the amount of Metarenas to mint
+    /// @dev need to approve ARENA token transfer before calling this function
     function mint(uint256 _amount) external payable mintCompliance(_amount) {
         if (block.timestamp >= mintStart && block.timestamp <= mintCarbonEnd) {
             require(
@@ -226,7 +224,9 @@ contract Metarenas is
         _mintLoop(msg.sender, _amount);
     }
 
-    // Free mint function for Owner of the Smart Contract, used for Giveaways
+    /// @notice free mint function for Owner of the Smart Contract, used for giveaways and partnerships
+    /// @param _mintAmount the amount of tokens to mint
+    /// @param _receive the address to mint to
     function mintForAddress(uint256 _mintAmount, address _receiver)
         public
         mintCompliance(_mintAmount)
@@ -235,11 +235,8 @@ contract Metarenas is
         _mintLoop(_receiver, _mintAmount);
     }
 
-    /////////////
-    // Staking //
-    /////////////
-
-    // Function to stake arena
+    /// @notice function called to stake Metarenas
+    /// @param _arenaTokenId the token Id of the Metarena to be staked
     function stakeArena(uint256 _arenaTokenId) external nonReentrant {
         require(
             msg.sender == ownerOf(_arenaTokenId),
@@ -254,7 +251,8 @@ contract Metarenas is
         userArenasStaked[msg.sender].push(_arenaTokenId);
     }
 
-    // Function to unstake arena
+    /// @notice function called to unstake Metarenas
+    /// @param _arenaTokenId the token Id of the Metarena to be unstaked
     function unstakeArena(uint256 _arenaTokenId) external nonReentrant {
         require(
             msg.sender == ownerOf(_arenaTokenId),
@@ -283,9 +281,9 @@ contract Metarenas is
         userArenasStaked[msg.sender].pop();
     }
 
-    // Calculate rewards for the msg.sender, check if there are any rewards
-    // claim, set unclaimedRewards to 0 and transfer the ERC20 Reward token
-    // to the user.
+    /// @notice function used to claim the rewards accumulated for a Metarena
+    /// @param _arenaTokenId the token ID of the Metarena selected to claim rewards from
+    /// @dev Only sends $ARENA rewards if $BYTE is not enabled
     function claimRewards(uint256 _arenaTokenId) external nonReentrant {
         require(
             msg.sender == ownerOf(_arenaTokenId),
@@ -306,11 +304,9 @@ contract Metarenas is
         arenaToken.transfer(msg.sender, arenaRewards);
     }
 
-    ////////////////////
-    // Level and Tier //
-    ////////////////////
-
-    // Function called by level booster to increse arena level
+    /// @notice function called by the Level Booster address to increase the level of an Metarena
+    /// @param _arenaTokenId the token ID of the Metarena to be boosted
+    /// @param _levelsToIncrease the amount of levels to add to the Metarena
     function increaseLevel(uint256 _arenaTokenId, uint256 _levelsToIncrease)
         external
     {
@@ -321,7 +317,8 @@ contract Metarenas is
         arenas[_arenaTokenId].level += _levelsToIncrease;
     }
 
-    // Upgrade the tier of your arena when you have the necesary level
+    /// @notice upgrades the tier of the Metarena when user has required levels
+    /// @param _arenaTokenId the token ID of the Metarena to be upgraded
     function upgradeArenaTier(uint256 _arenaTokenId) external nonReentrant {
         require(
             ownerOf(_arenaTokenId) == msg.sender,
@@ -352,11 +349,10 @@ contract Metarenas is
         arenas[_arenaTokenId] = _arena;
     }
 
-    ///////////
-    // Admin //
-    ///////////
-
-    // Set the address for other SC in the ecosystem
+    /// @notice sets the addresses of the other Contracts in the ecosystem
+    /// @param _oldArenas the address for the old Arenas Contract
+    /// @param _passes the address for the Metapasses Contract
+    /// @param _arenaToken the address for the $ARENA Token Contract
     function setInterfaces(
         IArenas _oldArenas,
         IERC1155 _passes,
@@ -367,22 +363,27 @@ contract Metarenas is
         arenaToken = _arenaToken;
     }
 
-    // Set paused state for minting
+    /// @notice change the state of minting
+    /// @param _paused true = minting is paused, false = minting is resumed
     function setPaused(bool _paused) external onlyOwnerOrAdmin {
         paused = _paused;
     }
 
-    // Set the Byte Token Smart Contract
+    /// @notice set the address for the $BYTE Token Contract
+    /// @param _address he $BYTE Token Contract address
     function setByteToken(IERC20 _address) external onlyOwnerOrAdmin {
         byteToken = _address;
     }
 
-    // Set if byte enabled in the system
+    /// @notice enable the $BYTE token in the Contract
+    /// @param _bool the state of $BYTE usability
     function setByteEnabled(bool _bool) external onlyOwnerOrAdmin {
         byteEndabled = _bool;
     }
 
-    // Set the prices for Arena Upgrade
+    /// @notice sets the prices for Tier upgrade
+    /// @param _priceForUpgradeArena the price to pay in $ARENA Token
+    /// @param _priceForUpgradeByte the price to pay in $BYTE Token
     function setPriceForUpgrade(
         uint256 _priceForUpgradeArena,
         uint256 _priceForUpgradeByte
@@ -391,7 +392,10 @@ contract Metarenas is
         bytePriceForUpgrade = _priceForUpgradeByte;
     }
 
-    // Set the mint cost of one NFT
+    /// @notice set the mint cost of one Metarena
+    /// @param _carbon the mint price for Carbon Metapass holders
+    /// @param _gold the mint price for Gold Metapass holders
+    /// @param _all the mint price for public sale
     function setPrice(
         uint256 _carbon,
         uint256 _gold,
@@ -402,7 +406,8 @@ contract Metarenas is
         priceForAll = _all;
     }
 
-    // Set the maximum mint amount per transaction
+    /// @notice set the maximum mint amount per transaction
+    /// @param _maxMintAmountPerTx the maximum amount allowed
     function setMaxMintAmountPerTx(uint256 _maxMintAmountPerTx)
         public
         onlyOwnerOrAdmin
@@ -410,22 +415,30 @@ contract Metarenas is
         maxAmountPerTx = _maxMintAmountPerTx;
     }
 
-    // The URI of IPFS/hosting server for the metadata folder.
-    // Used in the format: "ipfs://your_uri/".
+    /// @notice set the URI of IPFS/hosting server for the metadata folder
+    /// @param _uri the URI used in the format: "ipfs://your_uri/"
     function setUri(string memory _uri) public onlyOwnerOrAdmin {
         uri = _uri;
     }
 
+    /// @notice set the address that is allowed to increase levels of a Metarena
+    /// @param _levelBooster the address of the level booster
     function setLevelBooster(address _levelBooster) external onlyOwnerOrAdmin {
         levelBooster = _levelBooster;
     }
 
-    // Set a address for the admin function
+    /// @notice set a address for the admin function
+    /// @param _admin the admin's address
     function setAdmin(address _admin) external onlyOwner {
         admin = _admin;
     }
 
-    // Set the minting period for next districts
+    /// @notice set the minting period for future mints of new Districts
+    /// @param _mintStart the start of the minting phase only for Carbon Metapass holders
+    /// @param _mintCarbonEnd the start of the minting phase for both Carbon and Gold Metapass holders
+    /// @param _mintGoldEnd the start of the public minting phase
+    /// @param _mintEnd the end of the minting period
+    /// @dev all the times are expressed in UNIX fromat
     function setMintingPeriods(
         uint256 _mintStart,
         uint256 _mintCarbonEnd,
@@ -438,12 +451,15 @@ contract Metarenas is
         mintEnd = _mintEnd;
     }
 
+    /// @notice adds a new district by increading the maximum supply of the collection by 1000
     function addDistrict() external onlyOwnerOrAdmin {
         require(maxSupply <= 4000);
         maxSupply += 1000;
     }
 
-    // Add onchain metadata for Arena Rarity
+    /// @notice add onchain metadata for Arena Rarity
+    /// @param _tokenIds array of all the token IDs
+    /// @param _rarity array of coresponding rarity for the token IDs(0: Common, 1: Uncommon, 2: Rare, 3: Epic, 4: Legendary)
     function setRarity(uint256[] memory _tokenIds, uint256[] memory _rarity)
         external
         onlyOwnerOrAdmin
@@ -455,7 +471,9 @@ contract Metarenas is
         }
     }
 
-    // Set the reawards per day based on Arena rarity
+    /// @notice set the reawards per day based on Arena rarity
+    /// @param _rarity rarity(0: Common, 1: Uncommon, 2: Rare, 3: Epic, 4: Legendary)
+    /// @param _rewards the amount of rewards to distribute in one day
     function setRarityRewards(uint256 _rarity, uint256 _rewards)
         external
         onlyOwnerOrAdmin
@@ -463,8 +481,10 @@ contract Metarenas is
         rarityRewardsPerDay[_rarity] = _rewards;
     }
 
-    // Set the rewards multiplier for Arena tier
-    // Set with one decimal(exaplme: 10 == 1.0)
+    /// @notice set the rewards multiplier for Arena tier
+    /// @param _tier the tier to set the multiplier for
+    /// @param _multiplier the multiplier to set
+    /// @dev set with one decimal(exaplme: 10 == 1.0)
     function setTierMultiplier(uint256 _tier, uint256 _multiplier)
         external
         onlyOwnerOrAdmin
@@ -472,7 +492,9 @@ contract Metarenas is
         tierRewardsMultiplier[_tier] = _multiplier;
     }
 
-    // Withdraw Tokens
+    /// @notice withdraw function for owner
+    /// @param _amountArena amount of $ARENA token to withdraw
+    /// @param _amountByte amount of $BYTE token to withdraw if BYTE is enabled
     function withdraw(uint256 _amountArena, uint256 _amountByte)
         public
         onlyOwner
@@ -487,11 +509,8 @@ contract Metarenas is
         }
     }
 
-    //////////
-    // View //
-    //////////
-
-    //Returns Token Ids of Staked Arenas of arg _user
+    /// @notice returns token Ids of Staked Metarenas
+    /// @param _user the address to query for
     function userStakedArenas(address _user)
         public
         view
@@ -500,7 +519,8 @@ contract Metarenas is
         return userArenasStaked[_user];
     }
 
-    // Returns rewards available to claim for Arena
+    /// @notice returns rewards available to claim for Metarena
+    /// @param _arenaTokenId the token ID to query for
     function availableRewards(uint256 _arenaTokenId)
         public
         view
@@ -519,7 +539,8 @@ contract Metarenas is
         return (_rewardsArena, _rewardsByte);
     }
 
-    // Returns arena detalis for Arena Token ID passed as arg
+    /// @notice returns arena detalis for Metarena
+    /// @param _arenaTokenId the token ID to query for
     function arenaDetails(uint256 _arenaTokenId)
         public
         view
@@ -545,7 +566,8 @@ contract Metarenas is
         );
     }
 
-    // Returns the Token Id for Tokens owned by the specified address
+    /// @notice returns the Token Id for Tokens owned by the specified address
+    /// @param _user the address to query for
     function tokensOfOwner(address _owner)
         public
         view
@@ -559,7 +581,8 @@ contract Metarenas is
         return ownedTokenIds;
     }
 
-    // Returns the Token URI with Metadata for specified Token Id
+    /// @notice returns the Token URI with Metadata
+    /// @param _tokenId the token ID to return Metadata for
     function tokenURI(uint256 _tokenId)
         public
         view
@@ -584,16 +607,14 @@ contract Metarenas is
                 : "";
     }
 
-    /////////////
-    // Internal//
-    /////////////
-
-    // Helper function
+    /// @notice helper function that returns the base URI
     function _baseURI() internal view virtual override returns (string memory) {
         return uri;
     }
 
-    // Loop for minting multiple NFTs in one transaction
+    /// @notice loop for minting multiple NFTs in one transaction
+    /// @param _receiver the address to mint to
+    /// @param _mintAmount the amount of tokens to mint
     function _mintLoop(address _receiver, uint256 _mintAmount) internal {
         for (uint256 i = 0; i < _mintAmount; i++) {
             supply++;
@@ -601,6 +622,8 @@ contract Metarenas is
         }
     }
 
+    /// @notice calculate the $BYTE rewards accumulated by the Metarena since the last update
+    /// @param _arenaTokenId the token ID of the Metarena
     function calculateRewardsByte(uint256 _arenaTokenId)
         internal
         view
@@ -616,6 +639,8 @@ contract Metarenas is
         }
     }
 
+    /// @notice calculate the $ARENArewards accumulated by the Metarena since the last update
+    /// @param _arenaTokenId the token ID of the Metarena
     function calculateRewardsArena(uint256 _arenaTokenId)
         internal
         view
@@ -631,7 +656,8 @@ contract Metarenas is
         }
     }
 
-    // Returns arena level for arg Arena Token ID
+    /// @notice returns arena level
+    /// @param _arenaTokenId the token ID of the Metarena
     function calculateArenaLevel(uint256 _arenaTokenId)
         internal
         view
@@ -646,11 +672,7 @@ contract Metarenas is
         }
     }
 
-    // Just because you never know
-    receive() external payable {}
-
-    // The following functions are overrides required by Solidity.
-
+    /// @notice override function to block token transfers when tokenId is staked and reset Metarena level on transfer
     function _beforeTokenTransfer(
         address from,
         address to,
@@ -661,6 +683,7 @@ contract Metarenas is
         super._beforeTokenTransfer(from, to, tokenId);
     }
 
+    /// @notice override required by Solidity
     function supportsInterface(bytes4 interfaceId)
         public
         view
