@@ -226,7 +226,7 @@ contract Metarenas is
 
     /// @notice free mint function for Owner of the Smart Contract, used for giveaways and partnerships
     /// @param _mintAmount the amount of tokens to mint
-    /// @param _receive the address to mint to
+    /// @param _receiver the address to mint to
     function mintForAddress(uint256 _mintAmount, address _receiver)
         public
         mintCompliance(_mintAmount)
@@ -567,7 +567,7 @@ contract Metarenas is
     }
 
     /// @notice returns the Token Id for Tokens owned by the specified address
-    /// @param _user the address to query for
+    /// @param _owner the address to query for
     function tokensOfOwner(address _owner)
         public
         view
