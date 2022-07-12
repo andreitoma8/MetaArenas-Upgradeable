@@ -1,10 +1,9 @@
 from brownie import (
     Contract,
-    MetaArenas,
+    Metarenas,
     MetaArenasV2,
     ArenasOld,
-    EsportToken,
-    ByteToken,
+    ArenaToken,
     MetaPasses,
     ProxyAdmin,
     TransparentUpgradeableProxy,
@@ -20,13 +19,12 @@ def test_main():
     owner = accounts[0]
     # Deploy Proxi Admin
     proxy_admin = ProxyAdmin.deploy({"from": owner})
-    byte = ByteToken.deploy({"from": owner})
-    esport = EsportToken.deploy({"from": owner})
+    arena = ArenaToken.deploy({"from": owner})
     passes = MetaPasses.deploy({"from": owner})
     old_arenas = ArenasOld.deploy({"from": owner})
     old_arenas.mint(10, {"from": owner})
     # Deploy the first MetaArenas implementation
-    implementation = MetaArenas.deploy({"from": owner})
+    implementation = Metarenas.deploy({"from": owner})
     # Encode the initializa function
     encoded_initializer_function = encode_function_data(implementation.initialize)
     proxy = TransparentUpgradeableProxy.deploy(
@@ -36,10 +34,10 @@ def test_main():
         {"from": owner},
     )
     # Set Proxy ABI same as Implementation ABI
-    meta_arenas = Contract.from_abi("MetaArenas", proxy.address, MetaArenas.abi)
+    meta_arenas = Contract.from_abi("MetaArenas", proxy.address, Metarenas.abi)
     # Set interfaces
     meta_arenas.setInterfaces(
-        old_arenas.address, passes.address, esport.address, {"from": owner}
+        old_arenas.address, passes.address, arena.address, {"from": owner}
     )
     # Approve for Burn
     approve_burn_tx = old_arenas.approve(meta_arenas.address, 0, {"from": owner})

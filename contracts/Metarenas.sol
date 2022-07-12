@@ -2,11 +2,11 @@
 // Creator: andreitoma8
 pragma solidity ^0.8.4;
 
-import "@openzeppelin/contracts-upgradeable/contracts/token/ERC721/ERC721Upgradeable.sol";
-import "@openzeppelin/contracts-upgradeable/contracts/token/ERC721/extensions/ERC721EnumerableUpgradeable.sol";
-import "@openzeppelin/contracts-upgradeable/contracts/access/OwnableUpgradeable.sol";
-import "@openzeppelin/contracts-upgradeable/contracts/proxy/utils/Initializable.sol";
-import "@openzeppelin/contracts-upgradeable/contracts/security/ReentrancyGuardUpgradeable.sol";
+import "@upopenzeppelin/contracts-upgradeable/contracts/token/ERC721/ERC721Upgradeable.sol";
+import "@upopenzeppelin/contracts-upgradeable/contracts/token/ERC721/extensions/ERC721EnumerableUpgradeable.sol";
+import "@upopenzeppelin/contracts-upgradeable/contracts/access/OwnableUpgradeable.sol";
+import "@upopenzeppelin/contracts-upgradeable/contracts/proxy/utils/Initializable.sol";
+import "@upopenzeppelin/contracts-upgradeable/contracts/security/ReentrancyGuardUpgradeable.sol";
 import "@openzeppelin/contracts/token/ERC1155/IERC1155.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "../interfaces/IArenas.sol";
