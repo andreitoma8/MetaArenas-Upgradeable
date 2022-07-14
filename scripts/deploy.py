@@ -2,7 +2,7 @@ from brownie import (
     Contract,
     Metarenas,
     ArenasOld,
-    ArenaToken,
+    ArenaTokenMock,
     MetaPasses,
     ProxyAdmin,
     TransparentUpgradeableProxy,
@@ -19,7 +19,7 @@ def main():
     owner = accounts.add(config["wallets"]["from_key"])
     # Deploy Proxi Admin
     proxy_admin = ProxyAdmin.deploy({"from": owner}, publish_source=verification)
-    arena = ArenaToken.deploy({"from": owner}, publish_source=verification)
+    arena = ArenaTokenMock.deploy({"from": owner}, publish_source=verification)
     passes = MetaPasses.deploy({"from": owner}, publish_source=verification)
     old_arenas = ArenasOld.deploy({"from": owner}, publish_source=verification)
     # Just for tests:

@@ -1,7 +1,7 @@
 from brownie import (
     Contract,
     Metarenas,
-    ArenaToken,
+    ArenaTokenMock,
     MetaPasses,
     ProxyAdmin,
     TransparentUpgradeableProxy,
@@ -19,7 +19,7 @@ def main():
     owner = accounts.add(config["wallets"]["from_key"])
     # Deploy Proxi Admin
     proxy_admin = ProxyAdmin.deploy({"from": owner}, publish_source=verification)
-    token = ArenaToken.deploy({"from": owner}, publish_source=verification)
+    token = ArenaTokenMock.deploy({"from": owner}, publish_source=verification)
     passes = MetaPasses.deploy({"from": owner}, publish_source=verification)
     implementation = Metarenas.deploy({"from": owner}, publish_source=False)
     encoded_initializer_function = encode_function_data(implementation.initialize)
@@ -36,7 +36,7 @@ def main():
     )
     values = getArenaRarities()
     meta_arenas.setRarity(values[0], values[1], {"from": owner})
-    token.transfer(meta_arenas.address, 1000000 * 10 ** 18, {"from": owner})
+    token.transfer(meta_arenas.address, 1000000 * 10**18, {"from": owner})
     print(f"Old Arenas address: {old_arenas_address}")
     print(f"ARENA Token address: {token.address}")
     print(f"Meta Arenas address: {meta_arenas.address}")
