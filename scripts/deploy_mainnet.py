@@ -10,7 +10,7 @@ from scripts.helpful_scripts import encode_function_data, getArenaRarities
 
 verification = True
 old_arenas_address = "0x5726b8D291b69Cf7252785917cDD813e119eBb82"
-arena_token_address = ""
+arena_token_address = "0x0110F74379F0428Bb2362823e134544DE5e79693"
 metapasses_address = "0x4867f7ACb9078d2b462442c5ca3DBa01456844B5"
 matts_address = "0x6ff7095144c856422c09102Bf0606506Dae6f370"
 
