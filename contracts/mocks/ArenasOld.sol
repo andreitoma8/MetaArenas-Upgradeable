@@ -16,7 +16,7 @@ contract ArenasOld is ERC721, Ownable, ERC721Burnable {
     // The URI of your IPFS/hosting server for the metadata folder.
     // Used in the format: "ipfs://your_uri/".
     string internal uri =
-        "ipfs://QmVMheFDhqt2jbyTY7cBWZ6YVMbPmyrpUMfFyytndhkMFZ/";
+        "ipfs://QmU3CmwJsviCvErN7b7ovqu85ke22m17YpHZq3HYbwaUcR/";
 
     // The format of your metadata files
     string internal uriSuffix = ".json";
@@ -37,7 +37,7 @@ contract ArenasOld is ERC721, Ownable, ERC721Burnable {
     bool public paused = false;
 
     // The revealed state for Tokens Metadata
-    bool public revealed = false;
+    bool public revealed = true;
 
     // Presale state
     bool public presale = false;
@@ -161,14 +161,13 @@ contract ArenasOld is ERC721, Ownable, ERC721Burnable {
         }
 
         string memory currentBaseURI = _baseURI();
-        uint256 tokenIdToReturn = _tokenId + 1;
+        uint256 tokenIdToReturn = _tokenId;
         return
             bytes(currentBaseURI).length > 0
                 ? string(
                     abi.encodePacked(
                         currentBaseURI,
-                        tokenIdToReturn.toString(),
-                        uriSuffix
+                        tokenIdToReturn.toString()
                     )
                 )
                 : "";

@@ -22,14 +22,10 @@ def main():
     arena = ArenaTokenMock.deploy({"from": owner}, publish_source=verification)
     passes = MetaPasses.deploy({"from": owner}, publish_source=verification)
     old_arenas = ArenasOld.deploy({"from": owner}, publish_source=verification)
-    # Just for tests:
-    # for address in [
-    #     "0x6ff7095144c856422c09102Bf0606506Dae6f370",
-    #     "0x436d8Fa63c672797Fa7E30B0dc19dA42D50ebA51",
-    #     "0x3D59f41684af9aB653bCFAc982c4595238E5D11e",
-    # ]:
-    #     old_arenas.mintForAddress(10, address, {"from": owner})
-    # old_arenas.mint(20, {"from": owner}, publish_source=verification)
+    for address in [
+        "0x867deF42417c9Df8B947AAC0E3Abae840fF13E5f"
+    ]:
+        old_arenas.mintForAddress(10, address, {"from": owner})
     # Deploy the first MetaArenas implementation
     implementation = Metarenas.deploy({"from": owner}, publish_source=verification)
     # Encode the initializa function
@@ -48,6 +44,7 @@ def main():
     meta_arenas.setInterfaces(
         old_arenas.address, passes.address, arena.address, {"from": owner}
     )
+    arena.transfer(meta_arenas.address, 100000*10**18, {"from": owner})
     # # Approve for Burn
     # approve_burn_tx = old_arenas.approve(meta_arenas.address, 0, {"from": owner})
     # # Migrate Arena
