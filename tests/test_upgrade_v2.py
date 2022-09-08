@@ -1,7 +1,7 @@
 from brownie import (
     Contract,
     Metarenas,
-    MetaArenasV2,
+    MetarenasV2,
     ArenasOld,
     ArenaTokenMock,
     MetaPasses,
@@ -26,7 +26,8 @@ def test_main():
     # Deploy the first MetaArenas implementation
     implementation = Metarenas.deploy({"from": owner})
     # Encode the initializa function
-    encoded_initializer_function = encode_function_data(implementation.initialize)
+    encoded_initializer_function = encode_function_data(
+        implementation.initialize)
     proxy = TransparentUpgradeableProxy.deploy(
         implementation.address,
         proxy_admin.address,
@@ -40,18 +41,21 @@ def test_main():
         old_arenas.address, passes.address, arena.address, {"from": owner}
     )
     # Approve for Burn
-    approve_burn_tx = old_arenas.approve(meta_arenas.address, 0, {"from": owner})
+    approve_burn_tx = old_arenas.approve(
+        meta_arenas.address, 0, {"from": owner})
     # Assert Migrate Arena 1
     migrate_tx = meta_arenas.migrateArena(0, {"from": owner})
     assert meta_arenas.ownerOf(1) == owner.address
     # Deploy Arenas V2
-    implementation2 = MetaArenasV2.deploy({"from": owner})
+    implementation2 = MetarenasV2.deploy({"from": owner})
     # Upgrade
     upgrade(owner, proxy, implementation2, proxy_admin)
     # Set Proxy ABI same as Implementation ABI
-    meta_arenas = Contract.from_abi("MetaArenas", proxy.address, MetaArenasV2.abi)
+    meta_arenas = Contract.from_abi(
+        "MetaArenas", proxy.address, MetarenasV2.abi)
     # Approve for Burn
-    approve_burn_tx = old_arenas.approve(meta_arenas.address, 1, {"from": owner})
+    approve_burn_tx = old_arenas.approve(
+        meta_arenas.address, 1, {"from": owner})
     # Assert migrate Arena 2 in V2
     migrate_tx = meta_arenas.migrateArena(1, {"from": owner})
     assert meta_arenas.ownerOf(2) == owner.address

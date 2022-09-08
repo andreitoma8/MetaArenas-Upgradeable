@@ -1,6 +1,7 @@
 from brownie import (
     Contract,
     Metarenas,
+    MetarenasV2,
     ArenasOld,
     ArenaTokenMock,
     MetaPasses,
@@ -25,7 +26,8 @@ def test_main():
     # Deploy the first MetaArenas implementation
     implementation = Metarenas.deploy({"from": owner})
     # Encode the initializa function
-    encoded_initializer_function = encode_function_data(implementation.initialize)
+    encoded_initializer_function = encode_function_data(
+        implementation.initialize)
     proxy = TransparentUpgradeableProxy.deploy(
         implementation.address,
         proxy_admin.address,
@@ -39,7 +41,8 @@ def test_main():
         old_arenas.address, passes.address, arena.address, {"from": owner}
     )
     # Approve for Burn
-    approve_burn_tx = old_arenas.approve(meta_arenas.address, 0, {"from": owner})
+    approve_burn_tx = old_arenas.approve(
+        meta_arenas.address, 0, {"from": owner})
     # Migrate Arena
     migrate_tx = meta_arenas.migrateArena(0, {"from": owner})
     assert meta_arenas.ownerOf(1) == owner.address
@@ -55,12 +58,14 @@ def test_main():
     print(tokens_of_owner)
     # Stake Arena
     stake_tx = meta_arenas.stakeArena(1, {"from": owner})
-    user_arenas_staked = meta_arenas.userStakedArenas(owner.address, {"from": owner})
+    user_arenas_staked = meta_arenas.userStakedArenas(
+        owner.address, {"from": owner})
     assert user_arenas_staked[0] == 1
     print(user_arenas_staked)
     # Assert blocking transfers for staked tokens
     with brownie.reverts():
-        meta_arenas.transferFrom(owner.address, accounts[1].address, 1, {"from": owner})
+        meta_arenas.transferFrom(
+            owner.address, accounts[1].address, 1, {"from": owner})
     # Forward in time one level
     chain.mine(blocks=100, timedelta=259200)
     # Assert accumulation of rewards and level
@@ -81,25 +86,38 @@ def test_main():
     print(arena_details)
     assert esport_rewards >= (((259200 * 10) * 100000) / 3600)
     assert arena_details[1] == 11
+    # Upgrade to V2
+    # Deploy Arenas V2
+    implementation2 = MetarenasV2.deploy({"from": owner})
+    # Upgrade
+    upgrade(owner, proxy, implementation2, proxy_admin)
+    # Set Proxy ABI same as Implementation ABI
+    meta_arenas = Contract.from_abi(
+        "MetaArenas", proxy.address, MetarenasV2.abi)
     # Set up arena tier upgrade
-    approve_esport = arena.approve(meta_arenas.address, 100 * 10**18, {"from": owner})
+    approve_esport = arena.approve(
+        meta_arenas.address, 100 * 10**18, {"from": owner})
     # Assert tier upgrade
     upgrade_tier = meta_arenas.upgradeArenaTier(1, {"from": owner})
+    print(upgrade_tier.info())
     arena_details = meta_arenas.arenaDetails(1, {"from": owner})
     assert arena_details[0] == 1
     print(arena_details)
     with brownie.reverts():
         meta_arenas.upgradeArenaTier(1, {"from": owner})
     # Stake another Arena
-    approve_burn_tx = old_arenas.approve(meta_arenas.address, 1, {"from": owner})
+    approve_burn_tx = old_arenas.approve(
+        meta_arenas.address, 1, {"from": owner})
     migrate_tx = meta_arenas.migrateArena(1, {"from": owner})
     stake_tx = meta_arenas.stakeArena(2, {"from": owner})
-    user_arenas_staked = meta_arenas.userStakedArenas(owner.address, {"from": owner})
+    user_arenas_staked = meta_arenas.userStakedArenas(
+        owner.address, {"from": owner})
     assert user_arenas_staked[0] == 1 and user_arenas_staked[1] == 2
     print(user_arenas_staked)
     # Assert unstake Arena
     unstake_arena = meta_arenas.unstakeArena(1, {"from": owner})
-    user_arenas_staked = meta_arenas.userStakedArenas(owner.address, {"from": owner})
+    user_arenas_staked = meta_arenas.userStakedArenas(
+        owner.address, {"from": owner})
     print(user_arenas_staked)
     assert len(user_arenas_staked) == 1 and user_arenas_staked[0] == 2
     # Fund Arenas with Tokens
