@@ -517,9 +517,9 @@ contract MetarenasV2 is
             uint256 timeOfStake_
         )
     {
-        bool _canUpgrade = arenas[_arenaTokenId].level >=
-            levelsToUpgrade[arenas[_arenaTokenId].tier];
         uint256 _arenaLevel = calculateArenaLevel(_arenaTokenId);
+        bool _canUpgrade = _arenaLevel >=
+            levelsToUpgrade[arenas[_arenaTokenId].tier];
         return (
             arenas[_arenaTokenId].tier,
             _arenaLevel,
